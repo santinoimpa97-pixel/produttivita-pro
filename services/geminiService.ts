@@ -1,14 +1,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// --- CONFIGURAZIONE PER AI STUDIO (SVILUPPO LOCALE) ---
-// Ho inserito la chiave API che hai fornito.
+// --- CONFIGURAZIONE CORRETTA PER L'AMBIENTE AI STUDIO ---
+// Le linee guida richiedono di ottenere la chiave API esclusivamente da 'process.env.API_KEY',
+// poiché questa variabile è pre-configurata e resa disponibile nell'ambiente di esecuzione.
+const apiKey = process.env.API_KEY;
 
-const API_KEY = 'AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ';
+if (!apiKey) {
+    // Questo errore non dovrebbe mai apparire in un ambiente configurato correttamente.
+    throw new Error("La chiave API di Gemini non è stata trovata nell'ambiente. Assicurati che sia configurata.");
+}
+const ai = new GoogleGenAI({ apiKey });
 
-// Ho rimosso il controllo che causava l'errore. L'app ora si fiderà di questa chiave.
-// Se dovessi avere ancora problemi, assicurati che questa chiave sia valida e abilitata per il tuo progetto.
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 /**
  * Generates a list of subtasks for a given main task using the Gemini API.
@@ -16,7 +18,6 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
  * @returns A promise that resolves to an array of subtask strings.
  */
 export const generateSubtasksFromGemini = async (taskText: string): Promise<string[]> => {
-  // Ho rimosso il blocco che impediva l'esecuzione.
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash", 
@@ -57,8 +58,7 @@ export const generateSubtasksFromGemini = async (taskText: string): Promise<stri
 
   } catch (error) {
     console.error("Errore durante la generazione dei sotto-task con Gemini:", error);
-    // In caso di errore (es. chiave API non valida), ritorna un array vuoto e non blocca l'app.
-    alert(`Si è verificato un errore con l'IA. Controlla che la chiave API sia corretta. Dettagli: ${error.message}`);
+    // In caso di un errore (e.g. invalid API key), return an empty array and do not block the app.
     return [];
   }
 };
@@ -69,7 +69,6 @@ export const generateSubtasksFromGemini = async (taskText: string): Promise<stri
  * @returns A promise that resolves to an array of task strings.
  */
 export const generateRoutineTasks = async (routineName: string): Promise<string[]> => {
-  // Ho rimosso il blocco che impediva l'esecuzione.
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -110,7 +109,6 @@ export const generateRoutineTasks = async (routineName: string): Promise<string[
 
   } catch (error) {
     console.error("Errore durante la generazione dei compiti di routine con Gemini:", error);
-    alert(`Si è verificato un errore con l'IA. Controlla che la chiave API sia corretta. Dettagli: ${error.message}`);
     return [];
   }
 };

@@ -1,471 +1,632 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from './supabaseClient';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
-import { Task, SubTask, Priority, User, Routine, RoutineTemplate, Appointment, Goal, RoutineTask } from './types';
-import { generateSubtasksFromGemini, generateRoutineTasks } from './services/geminiService';
-import { motivationalQuotes } from './data/quotes';
-
-import AuthView from './components/AuthView';
+import {
+  Task,
+  SubTask,
+  Priority,
+  User,
+  Routine,
+  RoutineTask,
+  RoutineTemplate,
+  Appointment,
+  Goal,
+} from './types';
 import Header from './components/Header';
-import BottomNav, { View } from './components/BottomNav';
+import AuthView from './components/AuthView';
 import TasksView from './components/TasksView';
 import RoutinesView from './components/RoutinesView';
 import GoalsView from './components/GoalsView';
 import CalendarView from './components/CalendarView';
 import AnalyticsView from './components/AnalyticsView';
 import ProfileView from './components/ProfileView';
+import BottomNav, { View } from './components/BottomNav';
+import { supabase } from './supabaseClient';
+import { generateSubtasksFromGemini, generateRoutineTasks } from './services/geminiService';
+import { motivationalQuotes } from './data/quotes';
 
-// Helper functions to map Supabase data to frontend types
-const mapDbTaskToTask = (dbTask: any): Task => ({
-    id: dbTask.id,
-    text: dbTask.text,
-    priority: dbTask.priority,
-    completed: dbTask.completed,
-    dueDate: dbTask.due_date,
-    subTasks: (dbTask.sub_tasks || []).map(mapDbSubTaskToSubTask).sort((a,b) => a.text.localeCompare(b.text)),
-});
+// Main App Component
+function App() {
+  const newId = () => crypto.randomUUID();
 
-const mapDbSubTaskToSubTask = (dbSubTask: any): SubTask => ({
-    id: dbSubTask.id,
-    text: dbSubTask.text,
-    completed: dbSubTask.completed,
-});
+  // State
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [dataError, setDataError] = useState<string | null>(null);
 
-const mapDbRoutineToRoutine = (dbRoutine: any): Routine => ({
-    id: dbRoutine.id,
-    name: dbRoutine.name,
-    tasks: (dbRoutine.routine_tasks || []).map(mapDbRoutineTaskToRoutineTask).sort((a,b) => a.text.localeCompare(b.text)),
-});
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+        const storedPref = window.localStorage.getItem('darkMode');
+        if (storedPref !== null) return JSON.parse(storedPref);
+    }
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  });
+  const [view, setView] = useState<View>('tasks');
+  const [subtitle, setSubtitle] = useState('');
+  
+  // Data States
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [templates, setTemplates] = useState<RoutineTemplate[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  
+  // AI Loading States
+  const [generatingTaskId, setGeneratingTaskId] = useState<string | null>(null);
+  const [generatingRoutineId, setGeneratingRoutineId] = useState<string | null>(null);
 
-const mapDbRoutineTaskToRoutineTask = (dbRoutineTask: any): RoutineTask => ({
-    id: dbRoutineTask.id,
-    text: dbRoutineTask.text,
-});
+  // Effects
+  useEffect(() => {
+    setSubtitle(motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]);
+  }, []);
 
-const mapDbGoalToGoal = (dbGoal: any): Goal => ({
-    id: dbGoal.id,
-    title: dbGoal.title,
-    description: dbGoal.description,
-    completed: dbGoal.completed,
-    targetDate: dbGoal.target_date,
-    linkedTaskIds: dbGoal.linked_task_ids || [],
-});
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
 
-const mapDbAppointmentToAppointment = (dbAppointment: any): Appointment => ({
-    id: dbAppointment.id,
-    text: dbAppointment.text,
-    date: dbAppointment.date,
-    time: dbAppointment.time,
-});
-
-const App: React.FC = () => {
-    const [session, setSession] = useState<Session | null>(null);
-    const [user, setUser] = useState<User | null>(null);
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [routines, setRoutines] = useState<Routine[]>([]);
-    const [templates, setTemplates] = useState<RoutineTemplate[]>([]);
-    const [appointments, setAppointments] = useState<Appointment[]>([]);
-    const [goals, setGoals] = useState<Goal[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [view, setView] = useState<View>('tasks');
-    const [generatingTaskId, setGeneratingTaskId] = useState<string | null>(null);
-    const [generatingRoutineId, setGeneratingRoutineId] = useState<string | null>(null);
-    const [isDarkMode, setIsDarkMode] = useState(false); // Start with light mode
-
-    const quote = useMemo(() => motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)], []);
-
-    useEffect(() => {
-        if (isDarkMode) {
-            document.documentElement.classList.add('dark');
+  // Auth effect: Manages session and user state. It's the single source of truth for auth.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+        if (session?.user) {
+            setUser({
+                id: session.user.id,
+                email: session.user.email!,
+                displayName: session.user.user_metadata.display_name || session.user.email,
+            });
         } else {
-            document.documentElement.classList.remove('dark');
+            setUser(null);
         }
-    }, [isDarkMode]);
+        setAuthLoading(false); 
+    });
     
-    const fetchAllData = async (userId: string) => {
-        setLoading(true);
-        try {
-            const [
-                { data: tasksData, error: tasksError },
-                { data: routinesData, error: routinesError },
-                { data: templatesData, error: templatesError },
-                { data: appointmentsData, error: appointmentsError },
-                { data: goalsData, error: goalsError },
-            ] = await Promise.all([
-                supabase.from('tasks').select('*, sub_tasks(*)').eq('user_id', userId).order('created_at', { ascending: false }),
-                supabase.from('routines').select('*, routine_tasks(*)').eq('user_id', userId).order('created_at', { ascending: false }),
-                supabase.from('routine_templates').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-                supabase.from('appointments').select('*').eq('user_id', userId).order('date', { ascending: true }).order('time', { ascending: true }),
-                supabase.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-            ]);
+    return () => subscription.unsubscribe();
+  }, []);
 
-            if (tasksError) throw tasksError;
-            if (routinesError) throw routinesError;
-            if (templatesError) throw templatesError;
-            if (appointmentsError) throw appointmentsError;
-            if (goalsError) throw goalsError;
+  // Data fetching function, wrapped in useCallback for stability.
+  const fetchData = useCallback(async (userId: string) => {
+    setDataLoading(true);
+    setDataError(null);
+    try {
+        const [tasksRes, subTasksRes, routinesRes, routineTasksRes, templatesRes, appointmentsRes, goalsRes] = await Promise.all([
+            supabase.from('tasks').select('*').eq('user_id', userId),
+            supabase.from('sub_tasks').select('*').eq('user_id', userId),
+            supabase.from('routines').select('*').eq('user_id', userId),
+            supabase.from('routine_tasks').select('*').eq('user_id', userId),
+            supabase.from('routine_templates').select('*').eq('user_id', userId),
+            supabase.from('appointments').select('*').eq('user_id', userId),
+            supabase.from('goals').select('*').eq('user_id', userId),
+        ]);
 
-            setTasks(tasksData?.map(mapDbTaskToTask) || []);
-            setRoutines(routinesData?.map(mapDbRoutineToRoutine) || []);
-            setTemplates(templatesData?.map(t => ({ id: t.id, name: t.name, tasks: t.tasks || [] })) || []);
-            setAppointments(appointmentsData?.map(mapDbAppointmentToAppointment) || []);
-            setGoals(goalsData?.map(mapDbGoalToGoal) || []);
-            
-        } catch (error) {
-            console.error("Error fetching data:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-    
-    useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            setSession(session);
-            if (session?.user) {
-                 const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-                 setUser({
-                    id: session.user.id,
-                    email: session.user.email || '',
-                    displayName: profile?.display_name || session.user.email || 'Utente',
-                });
-                await fetchAllData(session.user.id);
-            } else {
-                setUser(null);
-                setTasks([]); 
-                setRoutines([]); 
-                setTemplates([]); 
-                setAppointments([]); 
-                setGoals([]);
-                setLoading(false);
-            }
-        });
-        return () => subscription.unsubscribe();
-    }, []);
-
-    const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
-
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-    };
-    
-    const handleUpdateUser = (displayName: string) => {
-        if(user) setUser({ ...user, displayName });
-    };
-
-    // --- TASKS ---
-    const handleAddTask = async (text: string, priority: Priority, dueDate: string | null) => {
-        if (!user) return;
-        const { data, error } = await supabase.from('tasks').insert({ text, priority, due_date: dueDate, user_id: user.id }).select('*, sub_tasks(*)').single();
-        if (error) console.error("Error adding task:", error);
-        else if(data) setTasks(prev => [mapDbTaskToTask(data), ...prev]);
-    };
-    const handleToggleTask = (id: string) => {
-        const originalTasks = tasks;
-        const task = tasks.find(t => t.id === id);
-        if (!task) return;
+        const results = [tasksRes, subTasksRes, routinesRes, routineTasksRes, templatesRes, appointmentsRes, goalsRes];
+        const failedResult = results.find(res => res.error);
+        if (failedResult) throw failedResult.error;
         
-        setTasks(prev => prev.map(t => t.id === id ? {...t, completed: !t.completed} : t));
+        const tasksData = tasksRes.data || [];
+        const subTasksData = subTasksRes.data || [];
+        const tasksWithSubTasks = tasksData.map(task => ({
+            ...task,
+            dueDate: task.due_date,
+            subTasks: subTasksData.filter(sub => sub.task_id === task.id)
+        }));
+        setTasks(tasksWithSubTasks);
+
+        const routinesData = routinesRes.data || [];
+        const routineTasksData = routineTasksRes.data || [];
+        const routinesWithTasks = routinesData.map(routine => ({
+            ...routine,
+            tasks: routineTasksData.filter(task => task.routine_id === routine.id)
+        }));
+        setRoutines(routinesWithTasks);
         
-        supabase.from('tasks').update({ completed: !task.completed }).eq('id', id).then(({error}) => {
-            if (error) {
-                console.error("Error toggling task", error);
-                setTasks(originalTasks); // Revert on error
-            }
-        });
-    };
-    const handleDeleteTask = (id: string) => {
-        const originalTasks = tasks;
-        setTasks(prev => prev.filter(t => t.id !== id));
-        supabase.from('tasks').delete().eq('id', id).then(({error}) => {
-            if (error) {
-                console.error("Error deleting task", error);
-                setTasks(originalTasks);
-            }
-        });
-    };
-    const handleUpdateTask = (id: string, newText: string) => {
-        const originalTasks = tasks;
-        setTasks(prev => prev.map(t => t.id === id ? {...t, text: newText} : t));
-        supabase.from('tasks').update({ text: newText }).eq('id', id).then(({error}) => {
-            if (error) {
-                console.error("Error updating task", error);
-                setTasks(originalTasks);
-            }
-        });
-    };
+        setTemplates(templatesRes.data?.map((t: any) => ({ ...t, tasks: t.tasks || [] })) || []);
+        setAppointments(appointmentsRes.data || []);
+        setGoals(goalsRes.data?.map((g: any) => ({ ...g, targetDate: g.target_date, linkedTaskIds: g.linked_task_ids || [] })) || []);
 
-    // --- SUBTASKS ---
-    const handleAddSubTask = async (taskId: string, subTaskText: string) => {
-        if (!user) return;
-        const { data, error } = await supabase.from('sub_tasks').insert({ text: subTaskText, task_id: taskId, user_id: user.id }).select().single();
-        if(error) console.error("Error adding subtask:", error);
-        else if (data) {
-            const newSubTask = mapDbSubTaskToSubTask(data);
-            setTasks(prev => prev.map(t => t.id === taskId ? {...t, subTasks: [...t.subTasks, newSubTask].sort((a,b) => a.text.localeCompare(b.text))} : t));
-        }
-    };
-    const handleToggleSubTask = (taskId: string, subTaskId: string) => {
-        const originalTasks = tasks;
-        let originalSubTaskState = false;
+    } catch (error: any) {
+        console.error("Error fetching data:", error);
+        setDataError("Impossibile caricare i dati. Controlla la tua connessione e riprova.");
+    } finally {
+        setDataLoading(false);
+    }
+  }, []);
 
-        const updatedTasks = tasks.map(t => {
-            if (t.id === taskId) {
-                return {
-                    ...t,
-                    subTasks: t.subTasks.map(st => {
-                        if (st.id === subTaskId) {
-                            originalSubTaskState = st.completed;
-                            return { ...st, completed: !st.completed };
-                        }
-                        return st;
-                    })
-                };
-            }
-            return t;
-        });
-        setTasks(updatedTasks);
+  // Data fetching effect: runs only when the user logs in or out.
+  useEffect(() => {
+    if (user?.id) {
+      fetchData(user.id);
+    } else {
+      // Clear all data on logout
+      setTasks([]);
+      setRoutines([]);
+      setTemplates([]);
+      setAppointments([]);
+      setGoals([]);
+    }
+  }, [user?.id, fetchData]);
+  
+  // General Handlers
+  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+  const handleLogout = () => supabase.auth.signOut();
+  const handleUpdateUser = (displayName: string) => user && setUser({ ...user, displayName });
 
-        supabase.from('sub_tasks').update({ completed: !originalSubTaskState }).eq('id', subTaskId).then(({error}) => {
-             if (error) {
-                console.error("Error toggling subtask", error);
-                setTasks(originalTasks);
-            }
-        });
-    };
-    const handleDeleteSubTask = (taskId: string, subTaskId: string) => {
-        const originalTasks = tasks;
-        setTasks(prev => prev.map(t => t.id === taskId ? {...t, subTasks: t.subTasks.filter(st => st.id !== subTaskId)} : t));
-        supabase.from('sub_tasks').delete().eq('id', subTaskId).then(({error}) => {
-            if (error) {
-                console.error("Error deleting subtask", error);
-                setTasks(originalTasks);
-            }
-        });
-    };
-    const handleUpdateSubTask = (taskId: string, subTaskId: string, newText: string) => {
-        const originalTasks = tasks;
-        setTasks(prev => prev.map(t => t.id === taskId ? {...t, subTasks: t.subTasks.map(st => st.id === subTaskId ? {...st, text: newText} : st)} : t));
-        supabase.from('sub_tasks').update({ text: newText }).eq('id', subTaskId).then(({error}) => {
-             if (error) {
-                console.error("Error updating subtask", error);
-                setTasks(originalTasks);
-            }
-        });
-    };
-    const handleGenerateSubtasks = async (taskId: string, taskText: string) => {
-        if(!user) return;
-        setGeneratingTaskId(taskId);
+  // Task Handlers
+  const handleAddTask = async (text: string, priority: Priority, dueDate: string | null) => {
+    if (!user) return;
+    const newTask: Task = { id: newId(), text, priority, dueDate, completed: false, subTasks: [] };
+    setTasks(prev => [newTask, ...prev]);
+    const { error } = await supabase.from('tasks').insert({ id: newTask.id, user_id: user.id, text, priority, due_date: dueDate, completed: false });
+    if (error) {
+      console.error(error);
+      setTasks(prev => prev.filter(t => t.id !== newTask.id));
+    }
+  };
+
+  const handleToggleTask = async (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    const newStatus = !task.completed;
+    setTasks(tasks.map(t => t.id === id ? { ...t, completed: newStatus } : t));
+    const { error } = await supabase.from('tasks').update({ completed: newStatus }).eq('id', id);
+    if (error) {
+        console.error(error);
+        setTasks(tasks.map(t => t.id === id ? { ...t, completed: !newStatus } : t));
+    }
+  };
+
+  const handleDeleteTask = async (id: string) => {
+    const oldTasks = tasks;
+    setTasks(tasks.filter(t => t.id !== id));
+    
+    // First, delete associated subtasks
+    const { error: subtasksError } = await supabase.from('sub_tasks').delete().eq('task_id', id);
+    if (subtasksError) {
+        console.error("Error deleting subtasks:", subtasksError);
+        setTasks(oldTasks); // Revert state
+        return;
+    }
+    
+    // Then, delete the task itself
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (error) {
+        console.error(error);
+        setTasks(oldTasks);
+    }
+  };
+
+  const handleUpdateTask = async (id: string, newText: string) => {
+    const oldTasks = tasks;
+    setTasks(tasks.map(t => t.id === id ? { ...t, text: newText } : t));
+    const { error } = await supabase.from('tasks').update({ text: newText }).eq('id', id);
+    if (error) {
+        console.error(error);
+        setTasks(oldTasks);
+    }
+  };
+
+  // SubTask Handlers (Refactored for separate table)
+  const handleAddSubTask = async (taskId: string, subTaskText: string) => {
+    if (!user) return;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const newSubTask: SubTask = { id: newId(), text: subTaskText, completed: false };
+    const dbSubTask = { ...newSubTask, task_id: taskId, user_id: user.id };
+    
+    const oldTasks = tasks;
+    setTasks(tasks.map(t => t.id === taskId ? {...t, subTasks: [...t.subTasks, newSubTask]} : t));
+
+    const { error } = await supabase.from('sub_tasks').insert(dbSubTask);
+    if(error){
+        console.error("Failed to add subtask:", error);
+        setTasks(oldTasks);
+    }
+  };
+
+  const handleToggleSubTask = async (taskId: string, subTaskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const subTask = task.subTasks.find(st => st.id === subTaskId);
+    if (!subTask) return;
+    const newStatus = !subTask.completed;
+
+    const oldTasks = tasks;
+    setTasks(tasks.map(t => t.id === taskId ? {
+        ...t,
+        subTasks: t.subTasks.map(st => st.id === subTaskId ? { ...st, completed: newStatus } : st)
+    } : t));
+
+    const { error } = await supabase.from('sub_tasks').update({ completed: newStatus }).eq('id', subTaskId);
+    if (error) {
+        console.error("Failed to toggle subtask:", error);
+        setTasks(oldTasks);
+    }
+  };
+
+  const handleDeleteSubTask = async (taskId: string, subTaskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const oldTasks = tasks;
+    setTasks(tasks.map(t => t.id === taskId ? {...t, subTasks: t.subTasks.filter(st => st.id !== subTaskId)} : t));
+
+    const { error } = await supabase.from('sub_tasks').delete().eq('id', subTaskId);
+    if(error){
+        console.error("Failed to delete subtask:", error);
+        setTasks(oldTasks);
+    }
+  };
+  
+  const handleUpdateSubTask = async (taskId: string, subTaskId: string, newText: string) => {
+    const oldTasks = tasks;
+    setTasks(tasks.map(t => t.id === taskId ? {
+        ...t,
+        subTasks: t.subTasks.map(st => st.id === subTaskId ? { ...st, text: newText } : st)
+    } : t));
+
+    const { error } = await supabase.from('sub_tasks').update({ text: newText }).eq('id', subTaskId);
+    if (error) {
+        console.error("Failed to update subtask:", error);
+        setTasks(oldTasks);
+    }
+  };
+  
+  const handleGenerateSubtasks = async (taskId: string, taskText: string) => {
+    if (!user) return;
+    setGeneratingTaskId(taskId);
+    try {
+        const task = tasks.find(t => t.id === taskId);
+        if(!task) return;
+
         const subtaskTexts = await generateSubtasksFromGemini(taskText);
-        const newSubtasksData = subtaskTexts.map(text => ({ text, task_id: taskId, user_id: user.id }));
-        if(newSubtasksData.length > 0) {
-            const { data, error } = await supabase.from('sub_tasks').insert(newSubtasksData).select();
-            if(error) console.error("Error generating subtasks:", error);
-            else if(data) {
-                const newSubTasks = data.map(mapDbSubTaskToSubTask);
-                setTasks(prev => prev.map(t => t.id === taskId ? {...t, subTasks: [...t.subTasks, ...newSubTasks].sort((a,b) => a.text.localeCompare(b.text))} : t));
-            }
-        }
-        setGeneratingTaskId(null);
-    };
+        if (subtaskTexts.length === 0) return;
 
-    // --- ROUTINES ---
-    const handleAddRoutine = async (name: string) => {
-        if(!user) return;
-        const { data, error } = await supabase.from('routines').insert({ name, user_id: user.id }).select('*, routine_tasks(*)').single();
-        if(error) console.error("Error adding routine", error);
-        else if (data) setRoutines(prev => [mapDbRoutineToRoutine(data), ...prev]);
-    };
-    const handleDeleteRoutine = (id: string) => {
-        const originalRoutines = routines;
-        setRoutines(prev => prev.filter(r => r.id !== id));
-        supabase.from('routines').delete().eq('id', id).then(({error}) => {
-            if (error) {
-                console.error("Error deleting routine", error);
-                setRoutines(originalRoutines);
-            }
-        });
-    };
-    const handleAddRoutineTask = async (routineId: string, taskText: string) => {
-        if(!user) return;
-        const { data, error } = await supabase.from('routine_tasks').insert({ routine_id: routineId, text: taskText, user_id: user.id }).select().single();
-        if(error) console.error("Error adding routine task", error);
-        else if(data) {
-            const newTask = mapDbRoutineTaskToRoutineTask(data);
-            setRoutines(prev => prev.map(r => r.id === routineId ? {...r, tasks: [...r.tasks, newTask].sort((a,b) => a.text.localeCompare(b.text))} : r));
-        }
-    };
-    const handleDeleteRoutineTask = (routineId: string, taskId: string) => {
-        const originalRoutines = routines;
-        setRoutines(prev => prev.map(r => r.id === routineId ? {...r, tasks: r.tasks.filter(t => t.id !== taskId)} : r));
-        supabase.from('routine_tasks').delete().eq('id', taskId).then(({error}) => {
-             if (error) {
-                console.error("Error deleting routine task", error);
-                setRoutines(originalRoutines);
-            }
-        });
-    };
-    const handleGenerateRoutineTasks = async (routineId: string, routineName: string) => {
-        if(!user) return;
-        setGeneratingRoutineId(routineId);
-        const taskTexts = await generateRoutineTasks(routineName);
-        const newTasksData = taskTexts.map(text => ({ routine_id: routineId, text, user_id: user.id }));
-        if(newTasksData.length > 0) {
-            const { data, error } = await supabase.from('routine_tasks').insert(newTasksData).select();
-            if(error) console.error("Error generating routine tasks", error);
-            else if(data) {
-                const newTasks = data.map(mapDbRoutineTaskToRoutineTask);
-                setRoutines(prev => prev.map(r => r.id === routineId ? {...r, tasks: [...r.tasks, ...newTasks].sort((a,b) => a.text.localeCompare(b.text))} : r));
-            }
-        }
-        setGeneratingRoutineId(null);
-    };
+        const newSubtasks: SubTask[] = subtaskTexts.map(text => ({ id: newId(), text, completed: false }));
+        const newDbSubtasks = newSubtasks.map(sub => ({ ...sub, task_id: taskId, user_id: user.id }));
 
-    // --- TEMPLATES ---
-    const handleSaveAsTemplate = async (routineId: string) => {
-        const routine = routines.find(r => r.id === routineId);
-        if(!routine || !user) return;
-        const tasksJson = routine.tasks.map(t => ({ text: t.text }));
-        const { data, error } = await supabase.from('routine_templates').insert({ name: `${routine.name} Modello`, user_id: user.id, tasks: tasksJson }).select().single();
-        if(error) console.error("Error saving template", error);
-        else if(data) setTemplates(prev => [{ id: data.id, name: data.name, tasks: data.tasks || [] }, ...prev]);
-    };
-    const handleCreateFromTemplate = async (templateId: string) => {
-        if(!user) return;
-        const template = templates.find(t => t.id === templateId);
-        if(!template) return;
+        const oldTasks = tasks;
+        setTasks(tasks.map(t => t.id === taskId ? {...t, subTasks: [...t.subTasks, ...newSubtasks]} : t));
         
-        await fetchAllData(user.id); // Refresh data to avoid state issues
-    };
-    const handleDeleteTemplate = (templateId: string) => {
-        const originalTemplates = templates;
-        setTemplates(prev => prev.filter(t => t.id !== templateId));
-        supabase.from('routine_templates').delete().eq('id', templateId).then(({error}) => {
-             if (error) {
-                console.error("Error deleting template", error);
-                setTemplates(originalTemplates);
-            }
-        });
-    };
-    
-    // --- GOALS ---
-    const handleAddGoal = async (goal: Omit<Goal, 'id' | 'completed' | 'linkedTaskIds'>) => {
-        if(!user) return;
-        const { data, error } = await supabase.from('goals').insert({ title: goal.title, description: goal.description, target_date: goal.targetDate, user_id: user.id, linked_task_ids: [] }).select().single();
-        if(error) console.error("Error adding goal", error);
-        else if (data) setGoals(prev => [mapDbGoalToGoal(data), ...prev]);
-    };
-    const handleUpdateGoal = (goal: Omit<Goal, 'completed' | 'linkedTaskIds'>) => {
-        const originalGoals = goals;
-        setGoals(prev => prev.map(g => g.id === goal.id ? {...g, title: goal.title, description: goal.description, targetDate: goal.targetDate} : g));
-        supabase.from('goals').update({ title: goal.title, description: goal.description, target_date: goal.targetDate }).eq('id', goal.id).then(({error}) => {
-             if (error) {
-                console.error("Error updating goal", error);
-                setGoals(originalGoals);
-            }
-        });
-    };
-    const handleDeleteGoal = (id: string) => {
-        const originalGoals = goals;
-        setGoals(prev => prev.filter(g => g.id !== id));
-        supabase.from('goals').delete().eq('id', id).then(({error}) => {
-             if (error) {
-                console.error("Error deleting goal", error);
-                setGoals(originalGoals);
-            }
-        });
-    };
-    const handleToggleGoal = (id: string) => {
-        const originalGoals = goals;
-        const goal = goals.find(g => g.id === id);
-        if (!goal) return;
-        setGoals(prev => prev.map(g => g.id === id ? {...g, completed: !g.completed} : g));
-        supabase.from('goals').update({ completed: !goal.completed }).eq('id', id).then(({error}) => {
-             if (error) {
-                console.error("Error toggling goal", error);
-                setGoals(originalGoals);
-            }
-        });
-    };
-    const handleToggleLinkTask = (goalId: string, taskId: string) => {
-        const originalGoals = goals;
-        const goal = goals.find(g => g.id === goalId);
-        if (!goal) return;
-        const linkedTaskIds = goal.linkedTaskIds.includes(taskId) ? goal.linkedTaskIds.filter(id => id !== taskId) : [...goal.linkedTaskIds, taskId];
-        setGoals(prev => prev.map(g => g.id === goalId ? {...g, linkedTaskIds} : g));
-        supabase.from('goals').update({ linked_task_ids: linkedTaskIds }).eq('id', goalId).then(({error}) => {
-             if (error) {
-                console.error("Error linking task", error);
-                setGoals(originalGoals);
-            }
-        });
-    };
+        const { error } = await supabase.from('sub_tasks').insert(newDbSubtasks);
+        if(error){
+            console.error("Failed to bulk insert generated subtasks:", error);
+            setTasks(oldTasks);
+        }
+    } finally {
+        setGeneratingTaskId(null);
+    }
+  };
 
-    // --- APPOINTMENTS ---
-    const handleAddAppointment = async (appointment: Omit<Appointment, 'id'>) => {
-        if(!user) return;
-        const { data, error } = await supabase.from('appointments').insert({ ...appointment, user_id: user.id }).select().single();
-        if(error) console.error("Error adding appointment", error);
-        else if (data) {
-            setAppointments(prev => [...prev, mapDbAppointmentToAppointment(data)].sort((a,b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()));
-        }
-    };
-    const handleDeleteAppointment = (id: string) => {
-        const originalAppointments = appointments;
-        setAppointments(prev => prev.filter(a => a.id !== id));
-        supabase.from('appointments').delete().eq('id', id).then(({error}) => {
-             if (error) {
-                console.error("Error deleting appointment", error);
-                setAppointments(originalAppointments);
-            }
-        });
-    };
+  // Routine Handlers
+  const handleAddRoutine = async (name: string) => {
+    if (!user) return;
+    const newRoutine: Routine = { id: newId(), name, tasks: [] };
+    setRoutines(prev => [newRoutine, ...prev]);
+    const { error } = await supabase.from('routines').insert({ id: newRoutine.id, user_id: user.id, name });
+    if (error) {
+      console.error(error);
+      setRoutines(prev => prev.filter(r => r.id !== newRoutine.id));
+    }
+  };
 
-    const renderView = () => {
-        if (loading) {
-             return (
-                <div className="flex items-center justify-center pt-20">
-                    <svg className="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </div>
-            )
-        }
-        switch (view) {
-            case 'tasks': return <TasksView {...{tasks, onAddTask: handleAddTask, onToggleTask: handleToggleTask, onDeleteTask: handleDeleteTask, onUpdateTask: handleUpdateTask, onAddSubTask: handleAddSubTask, onToggleSubTask: handleToggleSubTask, onDeleteSubTask: handleDeleteSubTask, onUpdateSubTask: handleUpdateSubTask, onGenerateSubtasks: handleGenerateSubtasks, generatingTaskId}} />;
-            case 'routines': return <RoutinesView {...{routines, templates, onAddRoutine: handleAddRoutine, onDeleteRoutine: handleDeleteRoutine, onAddRoutineTask: handleAddRoutineTask, onDeleteRoutineTask: handleDeleteRoutineTask, onGenerateTasks: handleGenerateRoutineTasks, generatingRoutineId, onSaveAsTemplate: handleSaveAsTemplate, onCreateFromTemplate: handleCreateFromTemplate, onDeleteTemplate: handleDeleteTemplate}} />;
-            case 'goals': return <GoalsView {...{goals, tasks, onAddGoal: handleAddGoal, onUpdateGoal: handleUpdateGoal, onDeleteGoal: handleDeleteGoal, onToggleGoal: handleToggleGoal, onToggleLinkTask: handleToggleLinkTask}} />;
-            case 'calendar': return <CalendarView {...{appointments, onAddAppointment: handleAddAppointment, onDeleteAppointment: handleDeleteAppointment}} />;
-            case 'analytics': return <AnalyticsView tasks={tasks} />;
-            case 'profile': return user && <ProfileView user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} />;
-            default: return <TasksView {...{tasks, onAddTask: handleAddTask, onToggleTask: handleToggleTask, onDeleteTask: handleDeleteTask, onUpdateTask: handleUpdateTask, onAddSubTask: handleAddSubTask, onToggleSubTask: handleToggleSubTask, onDeleteSubTask: handleDeleteSubTask, onUpdateSubTask: handleUpdateSubTask, onGenerateSubtasks: handleGenerateSubtasks, generatingTaskId}} />;
-        }
-    };
+  const handleDeleteRoutine = async (id: string) => {
+    if (!user) return;
+    const oldRoutines = routines;
+    setRoutines(routines.filter(r => r.id !== id));
     
-    if (loading && !session) {
+    const { error: tasksError } = await supabase.from('routine_tasks').delete().eq('routine_id', id);
+    if (tasksError) {
+        console.error("Error deleting routine tasks:", tasksError);
+        setRoutines(oldRoutines);
+        return;
+    }
+
+    const { error: routineError } = await supabase.from('routines').delete().eq('id', id);
+    if (routineError) {
+        console.error("Error deleting routine:", routineError);
+        setRoutines(oldRoutines);
+    }
+  };
+
+  const handleAddRoutineTask = async (routineId: string, taskText: string) => {
+    if (!user) return;
+    const routine = routines.find(r => r.id === routineId);
+    if (!routine) return;
+
+    const newTask: RoutineTask = { id: newId(), text: taskText };
+    const dbTask = { ...newTask, routine_id: routineId, user_id: user.id };
+    
+    const oldRoutines = routines;
+    setRoutines(routines.map(r => r.id === routineId ? {...r, tasks: [...r.tasks, newTask]} : r));
+
+    const { error } = await supabase.from('routine_tasks').insert(dbTask);
+    if(error){
+        console.error("Failed to add routine task:", error);
+        setRoutines(oldRoutines);
+    }
+  };
+
+  const handleDeleteRoutineTask = async (routineId: string, taskId: string) => {
+    const routine = routines.find(r => r.id === routineId);
+    if (!routine) return;
+    
+    const oldRoutines = routines;
+    setRoutines(routines.map(r => r.id === routineId ? {...r, tasks: r.tasks.filter(t => t.id !== taskId)} : r));
+
+    const { error } = await supabase.from('routine_tasks').delete().eq('id', taskId);
+    if(error){
+        console.error("Failed to delete routine task:", error);
+        setRoutines(oldRoutines);
+    }
+  };
+  
+  const handleGenerateRoutineTasks = async (routineId: string, routineName: string) => {
+    if (!user) return;
+    setGeneratingRoutineId(routineId);
+    try {
+        const routine = routines.find(r => r.id === routineId);
+        if(!routine) return;
+
+        const taskTexts = await generateRoutineTasks(routineName);
+        if (taskTexts.length === 0) return;
+
+        const newTasks: RoutineTask[] = taskTexts.map(text => ({ id: newId(), text }));
+        const newDbTasks = newTasks.map(task => ({ ...task, routine_id: routineId, user_id: user.id }));
+
+        const oldRoutines = routines;
+        setRoutines(routines.map(r => r.id === routineId ? {...r, tasks: [...r.tasks, ...newTasks]} : r));
+        
+        const { error } = await supabase.from('routine_tasks').insert(newDbTasks);
+        if(error){
+            console.error("Failed to bulk insert generated routine tasks:", error);
+            setRoutines(oldRoutines);
+        }
+    } finally {
+        setGeneratingRoutineId(null);
+    }
+  };
+  
+  // Template Handlers
+  const handleSaveAsTemplate = async (routineId: string) => {
+      if (!user) return;
+      const routine = routines.find(r => r.id === routineId);
+      if (routine) {
+          const newTemplate: RoutineTemplate = { id: newId(), name: `${routine.name} (Modello)`, tasks: routine.tasks.map(({text}) => ({text})) };
+          setTemplates(prev => [newTemplate, ...prev]);
+          const { error } = await supabase.from('routine_templates').insert({ id: newTemplate.id, user_id: user.id, name: newTemplate.name, tasks: newTemplate.tasks });
+          if(error) {
+              console.error(error);
+              setTemplates(prev => prev.filter(t => t.id !== newTemplate.id));
+          }
+      }
+  };
+  
+  const handleCreateFromTemplate = async (templateId: string) => {
+    if (!user) return;
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+        // Create the routine first
+        const newRoutine: Routine = { id: newId(), name: template.name.replace(' (Modello)', '').trim(), tasks: [] };
+        const { error: routineError } = await supabase.from('routines').insert({ id: newRoutine.id, user_id: user.id, name: newRoutine.name });
+        if (routineError) {
+            console.error(routineError);
+            return;
+        }
+
+        // Then create and associate the tasks
+        const newTasks: RoutineTask[] = template.tasks.map(t => ({ ...t, id: newId() }));
+        const newDbTasks = newTasks.map(task => ({ ...task, routine_id: newRoutine.id, user_id: user.id }));
+        
+        const { error: tasksError } = await supabase.from('routine_tasks').insert(newDbTasks);
+        if (tasksError) {
+            console.error(tasksError);
+            // Optionally delete the created routine for cleanup
+            await supabase.from('routines').delete().eq('id', newRoutine.id);
+            return;
+        }
+        
+        // Update local state on success
+        setRoutines(prev => [{ ...newRoutine, tasks: newTasks }, ...prev]);
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+      const oldTemplates = templates;
+      setTemplates(templates.filter(t => t.id !== templateId));
+      const { error } = await supabase.from('routine_templates').delete().eq('id', templateId);
+      if(error){
+          console.error(error);
+          setTemplates(oldTemplates);
+      }
+  };
+
+  // Appointment Handlers
+  const handleAddAppointment = async (appointment: Omit<Appointment, 'id'>) => {
+      if(!user) return;
+      const newAppointment: Appointment = { id: newId(), ...appointment };
+      setAppointments(prev => [...prev, newAppointment].sort((a,b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()));
+      const { error } = await supabase.from('appointments').insert({ id: newAppointment.id, user_id: user.id, ...appointment});
+      if(error){
+          console.error(error);
+          setAppointments(prev => prev.filter(a => a.id !== newAppointment.id));
+      }
+  };
+
+  const handleDeleteAppointment = async (id: string) => {
+      const oldAppointments = appointments;
+      setAppointments(appointments.filter(a => a.id !== id));
+      const { error } = await supabase.from('appointments').delete().eq('id', id);
+      if(error){
+          console.error(error);
+          setAppointments(oldAppointments);
+      }
+  };
+
+  // Goal Handlers
+  const handleAddGoal = async (goal: Omit<Goal, 'id' | 'completed' | 'linkedTaskIds'>) => {
+      if(!user) return;
+      const newGoal: Goal = { id: newId(), completed: false, linkedTaskIds: [], ...goal };
+      setGoals(prev => [newGoal, ...prev]);
+      const { error } = await supabase.from('goals').insert({id: newGoal.id, user_id: user.id, title: newGoal.title, description: newGoal.description, target_date: newGoal.targetDate, completed: false, linked_task_ids: []});
+      if(error){
+          console.error(error);
+          setGoals(prev => prev.filter(g => g.id !== newGoal.id));
+      }
+  };
+  
+  const handleUpdateGoal = async (updatedGoalData: Omit<Goal, 'id' | 'completed' | 'linkedTaskIds'> & { id: string }) => {
+      const oldGoals = goals;
+      setGoals(goals.map(g => g.id === updatedGoalData.id ? { ...g, ...updatedGoalData } : g));
+      const { error } = await supabase.from('goals').update({ title: updatedGoalData.title, description: updatedGoalData.description, target_date: updatedGoalData.targetDate }).eq('id', updatedGoalData.id);
+      if(error){
+          console.error(error);
+          setGoals(oldGoals);
+      }
+  };
+
+  const handleDeleteGoal = async (id: string) => {
+      const oldGoals = goals;
+      setGoals(goals.filter(g => g.id !== id));
+      const { error } = await supabase.from('goals').delete().eq('id', id);
+      if(error){
+          console.error(error);
+          setGoals(oldGoals);
+      }
+  };
+
+  const handleToggleGoal = async (id: string) => {
+      const goal = goals.find(g => g.id === id);
+      if(!goal) return;
+      const newStatus = !goal.completed;
+      setGoals(goals.map(g => g.id === id ? { ...g, completed: newStatus } : g));
+      const { error } = await supabase.from('goals').update({ completed: newStatus }).eq('id', id);
+      if(error){
+          console.error(error);
+          setGoals(goals.map(g => g.id === id ? { ...g, completed: !newStatus } : g));
+      }
+  };
+  
+  const handleToggleLinkTask = async (goalId: string, taskId: string) => {
+      const goal = goals.find(g => g.id === goalId);
+      if(!goal) return;
+      const linked = goal.linkedTaskIds.includes(taskId);
+      const newLinkedTaskIds = linked ? goal.linkedTaskIds.filter(id => id !== taskId) : [...goal.linkedTaskIds, taskId];
+      
+      setGoals(goals.map(g => g.id === goalId ? { ...g, linkedTaskIds: newLinkedTaskIds } : g));
+      
+      const { error } = await supabase.from('goals').update({ linked_task_ids: newLinkedTaskIds }).eq('id', goalId);
+      if(error){
+          console.error(error);
+          setGoals(goals.map(g => g.id === goalId ? { ...g, linkedTaskIds: goal.linkedTaskIds } : g));
+      }
+  };
+  
+  // Memoized View
+  const currentViewComponent = useMemo(() => {
+    switch(view) {
+        case 'tasks':
+            return <TasksView 
+                tasks={tasks}
+                onAddTask={handleAddTask}
+                onToggleTask={handleToggleTask}
+                onDeleteTask={handleDeleteTask}
+                onUpdateTask={handleUpdateTask}
+                onAddSubTask={handleAddSubTask}
+                onToggleSubTask={handleToggleSubTask}
+                onDeleteSubTask={handleDeleteSubTask}
+                onUpdateSubTask={handleUpdateSubTask}
+                onGenerateSubtasks={handleGenerateSubtasks}
+                generatingTaskId={generatingTaskId}
+            />;
+        case 'routines':
+            return <RoutinesView
+                routines={routines}
+                templates={templates}
+                onAddRoutine={handleAddRoutine}
+                onDeleteRoutine={handleDeleteRoutine}
+                onAddRoutineTask={handleAddRoutineTask}
+                onDeleteRoutineTask={handleDeleteRoutineTask}
+                onGenerateTasks={handleGenerateRoutineTasks}
+                generatingRoutineId={generatingRoutineId}
+                onSaveAsTemplate={handleSaveAsTemplate}
+                onCreateFromTemplate={handleCreateFromTemplate}
+                onDeleteTemplate={handleDeleteTemplate}
+            />;
+        case 'goals':
+            return <GoalsView
+                goals={goals}
+                tasks={tasks}
+                onAddGoal={handleAddGoal}
+                onUpdateGoal={(g) => handleUpdateGoal(g as any)}
+                onDeleteGoal={handleDeleteGoal}
+                onToggleGoal={handleToggleGoal}
+                onToggleLinkTask={handleToggleLinkTask}
+            />;
+        case 'calendar':
+            return <CalendarView 
+                appointments={appointments}
+                onAddAppointment={handleAddAppointment}
+                onDeleteAppointment={handleDeleteAppointment}
+            />;
+        case 'analytics':
+            return <AnalyticsView tasks={tasks} />;
+        case 'profile':
+            return user ? <ProfileView user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : null;
+        default:
+            return <h2>View not found</h2>;
+    }
+  }, [view, tasks, routines, templates, appointments, goals, generatingTaskId, generatingRoutineId, user]);
+
+  const renderMainContent = () => {
+    if (dataLoading) {
       return (
-        <div className="bg-slate-100 dark:bg-slate-900 min-h-screen flex items-center justify-center">
-            <svg className="animate-spin h-10 w-10 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+        <div className="text-center p-8 text-slate-500 dark:text-slate-400">
+          Caricamento dei tuoi dati...
         </div>
-      )
+      );
     }
-
-    if (!session) {
-        return <AuthView />;
-    }
-
-    return (
-        <div className={`min-h-screen bg-slate-100 dark:bg-slate-900 font-sans transition-colors`}>
-            <Header user={user} onLogout={handleLogout} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} onSetView={setView} subtitle={quote} />
-            <main className="max-w-4xl mx-auto p-4 pb-24">
-                {renderView()}
-            </main>
-            {view !== 'profile' && <BottomNav currentView={view} onSetView={setView} />}
+    if (dataError) {
+      return (
+        <div className="text-center p-8 bg-red-100 dark:bg-red-900/50 rounded-lg">
+          <p className="font-semibold text-red-700 dark:text-red-300">{dataError}</p>
+          <button 
+            onClick={() => user && fetchData(user.id)} 
+            className="mt-4 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Riprova
+          </button>
         </div>
-    );
-};
+      );
+    }
+    return currentViewComponent;
+  };
+
+  if (authLoading) {
+    return <div className="bg-slate-100 dark:bg-slate-900 min-h-screen flex items-center justify-center text-slate-500">Verifica in corso...</div>;
+  }
+
+  if (!session || !user) {
+    return <AuthView />;
+  }
+
+  return (
+    <div className="bg-slate-100 dark:bg-slate-900 min-h-screen font-sans pb-24 md:pb-4">
+      <Header 
+        user={user} 
+        onLogout={handleLogout} 
+        isDarkMode={isDarkMode} 
+        toggleDarkMode={toggleDarkMode} 
+        onSetView={setView} 
+        subtitle={subtitle} 
+      />
+      <main className="max-w-4xl mx-auto p-4">
+        {renderMainContent()}
+      </main>
+      <BottomNav currentView={view} onSetView={setView} />
+    </div>
+  );
+}
 
 export default App;
