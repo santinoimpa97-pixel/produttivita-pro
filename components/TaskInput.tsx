@@ -36,15 +36,15 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
             required
           />
         </div>
-        <div className="flex items-start gap-4">
-          <div className="flex-1">
+        <div className="flex items-end gap-4">
+          <div>
             <label htmlFor="due-date" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Scadenza</label>
             <input
               id="due-date"
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
+              className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
             />
           </div>
           <div className="flex-1">
