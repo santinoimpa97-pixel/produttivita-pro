@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Priority } from '../types';
 import { PlusIcon } from './icons/PlusIcon';
@@ -37,8 +36,8 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
             required
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+        <div className="flex gap-4">
+          <div className="w-1/2">
             <label htmlFor="priority" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Priorità</label>
             <select
               id="priority"
@@ -51,7 +50,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
               <option value={Priority.Low}>Bassa</option>
             </select>
           </div>
-          <div>
+          <div className="w-1/2">
             <label htmlFor="due-date" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Scadenza</label>
             <input
               id="due-date"
