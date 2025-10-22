@@ -71,11 +71,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
         <div className="space-y-6 animate-fade-in">
             <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg">
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Aggiungi Appuntamento</h2>
-                <form onSubmit={handleAddAppointment} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input type="text" value={newAppointmentText} onChange={e => setNewAppointmentText(e.target.value)} placeholder="Descrizione appuntamento" className="w-full md:col-span-3 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" required />
-                    <input type="date" value={newAppointmentDate} onChange={e => setNewAppointmentDate(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" required />
-                    <input type="time" value={newAppointmentTime} onChange={e => setNewAppointmentTime(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" required />
-                    <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">
+                <form onSubmit={handleAddAppointment} className="space-y-4">
+                    <input type="text" value={newAppointmentText} onChange={e => setNewAppointmentText(e.target.value)} placeholder="Descrizione appuntamento" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" required />
+                    <div className="flex gap-4">
+                        <input type="date" value={newAppointmentDate} onChange={e => setNewAppointmentDate(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" required />
+                        <input type="time" value={newAppointmentTime} onChange={e => setNewAppointmentTime(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" required />
+                    </div>
+                    <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">
                         <PlusIcon className="w-5 h-5"/> Aggiungi
                     </button>
                 </form>

@@ -40,7 +40,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onSetView }) => {
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 shadow-[0_-2px_5px_rgba(0,0,0,0.1)] z-20">
-      <div className="max-w-4xl mx-auto flex items-center justify-around">
+      <div className="flex items-center justify-around">
         {navItems.map(item => (
           <NavItem
             key={item.view}
