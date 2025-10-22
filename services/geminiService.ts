@@ -1,8 +1,19 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// FIX: Initialize Gemini API client.
-// The API key is sourced from environment variables as per guidelines.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// --- CONFIGURAZIONE PER AI STUDIO (SVILUPPO LOCALE) ---
+// Per far funzionare le funzionalità di IA in AI Studio, devi inserire la tua chiave API qui.
+// ATTENZIONE: Per la pubblicazione su Vercel, usa la versione di questo file
+// che legge la chiave dalle "Environment Variables" (VITE_API_KEY) per non esporla pubblicamente.
+
+const API_KEY = 'AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ';
+
+// Controlla se la chiave API è stata inserita. Se manca, le funzionalità IA non funzioneranno.
+if (API_KEY.startsWith('AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ')) {
+  // Non bloccare l'app, ma avvisa nella console. Le chiamate all'API falliranno.
+  console.warn("Chiave API Gemini mancante! Apri il file 'services/geminiService.ts' e inserisci la tua chiave API per abilitare le funzionalità di intelligenza artificiale.");
+}
+
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 /**
  * Generates a list of subtasks for a given main task using the Gemini API.
@@ -10,13 +21,15 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
  * @returns A promise that resolves to an array of subtask strings.
  */
 export const generateSubtasksFromGemini = async (taskText: string): Promise<string[]> => {
+  if (API_KEY.startsWith('AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ')) {
+    alert("Funzionalità IA non attiva: manca la chiave API di Gemini nel file 'services/geminiService.ts'.");
+    return [];
+  }
   try {
     const response = await ai.models.generateContent({
-      // FIX: Use gemini-2.5-flash for basic text tasks like summarization and breakdown.
       model: "gemini-2.5-flash", 
       contents: `Dato il task principale "${taskText}", suddividilo in una lista di sotto-task più piccoli e gestibili. Fornisci la risposta in formato JSON con un array di stringhe chiamato "subtasks".`,
       config: {
-        // FIX: Request a JSON response and provide a schema for structured output.
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -35,7 +48,6 @@ export const generateSubtasksFromGemini = async (taskText: string): Promise<stri
       },
     });
 
-    // FIX: Access the text response and parse it as JSON.
     const jsonStr = response.text.trim();
     if (!jsonStr) {
         console.warn("Gemini returned an empty response.");
@@ -45,7 +57,6 @@ export const generateSubtasksFromGemini = async (taskText: string): Promise<stri
     const result: { subtasks: string[] } = JSON.parse(jsonStr);
 
     if (result && Array.isArray(result.subtasks)) {
-      // Filter out any empty strings that might be returned
       return result.subtasks.filter(s => typeof s === 'string' && s.trim() !== '');
     }
 
@@ -64,6 +75,10 @@ export const generateSubtasksFromGemini = async (taskText: string): Promise<stri
  * @returns A promise that resolves to an array of task strings.
  */
 export const generateRoutineTasks = async (routineName: string): Promise<string[]> => {
+  if (API_KEY.startsWith('AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ')) {
+    alert("Funzionalità IA non attiva: manca la chiave API di Gemini nel file 'services/geminiService.ts'.");
+    return [];
+  }
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
