@@ -1,19 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-// --- CONFIGURAZIONE PER AI STUDIO ---
-// In questo ambiente, le chiavi sono scritte direttamente nel codice.
-// Questo permette all'app di funzionare qui per lo sviluppo.
-// Quando pubblicherai su Vercel, dovrai usare la versione di questo file
-// che legge le chiavi da 'process.env'.
+// --- CONFIGURAZIONE PER VERCEL (PRODUZIONE) ---
+// In questo ambiente, le chiavi vengono lette in modo sicuro
+// dalle "Environment Variables" che hai impostato nel pannello di Vercel.
+// Questo è il metodo corretto per le applicazioni pubblicate online.
 
-const supabaseUrl = 'https://ystdeennihpqrlqtveey.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-// !!! IMPORTANTE !!!
-// Assicurati che la chiave qui sotto sia la tua vera "chiave anonima" di Supabase.
-// Se questa chiave non è corretta, l'applicazione non riuscirà a connettersi al database.
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzdGRlZW5uaWhwcXJscXR2ZWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwNjExNzcsImV4cCI6MjA3NjYzNzE3N30.HP6dajQFlql3Uv1IWmio8jPsir34DEQT2amAfWgRKh8';
+// Se le variabili d'ambiente non sono state impostate su Vercel,
+// l'applicazione si bloccherà con questo errore, rendendo facile capire il problema.
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("Supabase URL and Anon Key are required in environment variables.");
+}
 
-// Inizializza il client di Supabase.
-// Se l'URL o la chiave non sono corretti, vedrai degli errori nella console del browser
-// quando l'app proverà a interagire con il database.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
