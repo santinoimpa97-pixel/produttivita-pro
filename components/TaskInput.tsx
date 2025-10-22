@@ -36,8 +36,8 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
             required
           />
         </div>
-        <div className="flex gap-4">
-          <div className="w-1/2">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
             <label htmlFor="priority" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Priorità</label>
             <select
               id="priority"
@@ -50,7 +50,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
               <option value={Priority.Low}>Bassa</option>
             </select>
           </div>
-          <div className="w-1/2">
+          <div>
             <label htmlFor="due-date" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Scadenza</label>
             <input
               id="due-date"
