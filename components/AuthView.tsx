@@ -76,18 +76,18 @@ const AuthView: React.FC = () => {
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <svg className="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
                                 </div>
-                                <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-indigo-500 focus:border-indigo-500 transition" />
+                                <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-violet-500 focus:border-violet-500 transition" />
                             </div>
                         </div>
                         {error && <p className="text-sm text-red-600 text-center">{error}</p>}
                         {message && <p className="text-sm text-green-600 text-center">{message}</p>}
-                        <button type="submit" disabled={loading} className="w-full py-3 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors">
+                        <button type="submit" disabled={loading} className="w-full py-3 px-4 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-50 transition-colors">
                             {loading ? 'Invio...' : 'Invia Link di Recupero'}
                         </button>
                     </form>
                      <p className="text-sm text-center text-slate-500 dark:text-slate-400">
                         Ricordi la password?
-                        <button onClick={() => { setMode('login'); setError(null); setMessage(null); }} className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline ml-1">
+                        <button onClick={() => { setMode('login'); setError(null); setMessage(null); }} className="font-medium text-violet-600 dark:text-violet-400 hover:underline ml-1">
                             Torna al Login
                         </button>
                     </p>
@@ -110,7 +110,7 @@ const AuthView: React.FC = () => {
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <UserIcon className="h-5 w-5 text-slate-400" />
                                 </div>
-                                <input id="displayName" type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-indigo-500 focus:border-indigo-500 transition" />
+                                <input id="displayName" type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-violet-500 focus:border-violet-500 transition" />
                             </div>
                         </div>
                     )}
@@ -120,7 +120,7 @@ const AuthView: React.FC = () => {
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg className="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
                             </div>
-                            <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-indigo-500 focus:border-indigo-500 transition" />
+                            <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-violet-500 focus:border-violet-500 transition" />
                         </div>
                     </div>
                     <div>
@@ -129,18 +129,18 @@ const AuthView: React.FC = () => {
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <KeyIcon className="h-5 w-5 text-slate-400" />
                             </div>
-                            <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-indigo-500 focus:border-indigo-500 transition" />
+                            <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-violet-500 focus:border-violet-500 transition" />
                         </div>
                     </div>
                     
                     {mode === 'login' && (
                         <div className="flex items-center justify-between">
                             <div className="flex items-center">
-                                <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded" />
+                                <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 text-violet-600 focus:ring-violet-500 border-slate-300 rounded" />
                                 <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-900 dark:text-slate-300">Ricordami</label>
                             </div>
                             <div className="text-sm">
-                                <button type="button" onClick={() => setMode('forgotPassword')} className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+                                <button type="button" onClick={() => setMode('forgotPassword')} className="font-medium text-violet-600 dark:text-violet-400 hover:underline">
                                     Password dimenticata?
                                 </button>
                             </div>
@@ -150,14 +150,14 @@ const AuthView: React.FC = () => {
                     {error && <p className="text-sm text-red-600 text-center">{error}</p>}
                     {message && <p className="text-sm text-green-600 text-center">{message}</p>}
 
-                    <button type="submit" disabled={loading} className="w-full py-3 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors">
+                    <button type="submit" disabled={loading} className="w-full py-3 px-4 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-50 transition-colors">
                         {loading ? 'Caricamento...' : (mode === 'login' ? 'Accedi' : 'Registrati')}
                     </button>
                 </form>
 
                 <p className="text-sm text-center text-slate-500 dark:text-slate-400">
                     {mode === 'login' ? "Non hai un account?" : "Hai già un account?"}
-                    <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); setMessage(null); }} className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline ml-1">
+                    <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); setMessage(null); }} className="font-medium text-violet-600 dark:text-violet-400 hover:underline ml-1">
                         {mode === 'login' ? 'Registrati' : 'Accedi'}
                     </button>
                 </p>
@@ -166,8 +166,8 @@ const AuthView: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 space-y-6">
+        <div className="min-h-screen bg-slate-100 dark:bg-[#020617] flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 space-y-6">
                {renderContent()}
             </div>
         </div>

@@ -41,16 +41,16 @@ const RoutineItem: React.FC<{
     }
 
     return (
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md transition-all duration-300">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-md transition-all duration-300">
             <div className="flex items-center justify-between">
                 <div className="flex-grow">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{routine.name}</h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{routine.tasks.length} compiti</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => onSave(routine.id)} title="Salva come modello" className="p-2 text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><BookmarkIcon /></button>
+                    <button onClick={() => onSave(routine.id)} title="Salva come modello" className="p-2 text-slate-500 hover:text-violet-500 dark:hover:text-violet-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><BookmarkIcon /></button>
                     <button onClick={() => onDelete(routine.id)} className="p-2 text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><TrashIcon /></button>
-                    <button onClick={() => setIsExpanded(!isExpanded)} className="p-2 text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                    <button onClick={() => setIsExpanded(!isExpanded)} className="p-2 text-slate-500 hover:text-violet-500 dark:hover:text-violet-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition">
                         <ChevronDownIcon className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                     </button>
                 </div>
@@ -65,10 +65,10 @@ const RoutineItem: React.FC<{
                     ))}
                     {routine.tasks.length === 0 && <p className="text-sm text-slate-400 italic">Nessun compito in questa routine.</p>}
                     <form onSubmit={handleAddTask} className="flex items-center gap-2 pt-2">
-                        <input type="text" value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="Nuovo compito..." className="flex-grow px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm focus:ring-1 focus:ring-indigo-500"/>
-                        <button type="submit" className="p-1.5 text-slate-500 hover:text-indigo-600 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600"><PlusIcon className="w-5 h-5"/></button>
+                        <input type="text" value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="Nuovo compito..." className="flex-grow px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:ring-1 focus:ring-violet-500"/>
+                        <button type="submit" className="p-1.5 text-slate-500 hover:text-violet-600 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600"><PlusIcon className="w-5 h-5"/></button>
                     </form>
-                    <button onClick={() => onGenerate(routine.id, routine.name)} disabled={isGenerating} className="w-full mt-3 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-indigo-50 text-indigo-700 font-semibold rounded-lg hover:bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-300 dark:hover:bg-indigo-900 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                    <button onClick={() => onGenerate(routine.id, routine.name)} disabled={isGenerating} className="w-full mt-3 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-violet-50 text-violet-700 font-semibold rounded-lg hover:bg-violet-100 dark:bg-violet-900/50 dark:text-violet-300 dark:hover:bg-violet-900 disabled:opacity-50 disabled:cursor-not-allowed transition">
                         {isGenerating ? 'Generazione...' : <><SparklesIcon className="w-5 h-5"/> Genera Compiti con IA</>}
                     </button>
                 </div>
@@ -83,14 +83,14 @@ const TemplateItem: React.FC<{
     onDelete: (templateId: string) => void;
 }> = ({ template, onCreate, onDelete }) => {
     return (
-        <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl shadow-sm">
+        <div className="bg-slate-100 dark:bg-slate-900 p-4 rounded-xl shadow-sm">
             <div className="flex items-start justify-between">
                 <div>
                     <h4 className="font-bold text-slate-700 dark:text-slate-200">{template.name}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{template.tasks.length} compiti</p>
                 </div>
                 <div className="flex items-center gap-1">
-                    <button onClick={() => onCreate(template.id)} title="Crea routine da questo modello" className="p-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-full transition"><PlusIcon className="w-4 h-4"/></button>
+                    <button onClick={() => onCreate(template.id)} title="Crea routine da questo modello" className="p-2 text-white bg-violet-600 hover:bg-violet-700 rounded-full transition"><PlusIcon className="w-4 h-4"/></button>
                     <button onClick={() => onDelete(template.id)} className="p-2 text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition"><TrashIcon className="w-4 h-4"/></button>
                 </div>
             </div>
@@ -111,11 +111,11 @@ const RoutinesView: React.FC<RoutinesViewProps> = (props) => {
 
     return (
     <div className="space-y-8 animate-fade-in">
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Crea Nuova Routine</h2>
             <form onSubmit={handleAddRoutine} className="flex items-center gap-2">
-                <input type="text" value={newRoutineName} onChange={e => setNewRoutineName(e.target.value)} placeholder="Es. Routine Mattutina" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" required/>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700"><PlusIcon className="w-5 h-5"/></button>
+                <input type="text" value={newRoutineName} onChange={e => setNewRoutineName(e.target.value)} placeholder="Es. Routine Mattutina" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500" required/>
+                <button type="submit" className="px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700"><PlusIcon className="w-5 h-5"/></button>
             </form>
         </div>
 
@@ -134,7 +134,7 @@ const RoutinesView: React.FC<RoutinesViewProps> = (props) => {
                         onSave={props.onSaveAsTemplate}
                     />)
             ) : (
-                <div className="text-center py-6 px-4 bg-white dark:bg-slate-800 rounded-xl shadow-md">
+                <div className="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-xl shadow-md">
                     <p className="text-slate-500 dark:text-slate-400">Nessuna routine creata. Aggiungine una per iniziare!</p>
                 </div>
             )}
@@ -154,7 +154,7 @@ const RoutinesView: React.FC<RoutinesViewProps> = (props) => {
                     )}
                 </div>
             ) : (
-                 <div className="text-center py-6 px-4 bg-white dark:bg-slate-800 rounded-xl shadow-md">
+                 <div className="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-xl shadow-md">
                     <p className="text-slate-500 dark:text-slate-400">Nessun modello. Salva una routine come modello per riutilizzarla.</p>
                 </div>
             )}

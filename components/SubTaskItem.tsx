@@ -44,7 +44,7 @@ const SubTaskItem: React.FC<SubTaskItemProps> = ({ subTask, onToggle, onDelete, 
         type="checkbox"
         checked={subTask.completed}
         onChange={() => onToggle(subTask.id)}
-        className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+        className="h-5 w-5 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
       />
       {isEditing ? (
         <input
@@ -54,7 +54,7 @@ const SubTaskItem: React.FC<SubTaskItemProps> = ({ subTask, onToggle, onDelete, 
           onChange={(e) => setEditText(e.target.value)}
           onBlur={handleUpdate}
           onKeyDown={handleKeyDown}
-          className="flex-grow bg-transparent text-slate-700 dark:text-slate-300 border-b border-indigo-500 focus:outline-none"
+          className="flex-grow bg-transparent text-slate-700 dark:text-slate-300 border-b border-violet-500 focus:outline-none"
         />
       ) : (
         <span 
@@ -65,7 +65,7 @@ const SubTaskItem: React.FC<SubTaskItemProps> = ({ subTask, onToggle, onDelete, 
         </span>
       )}
       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => setIsEditing(true)} className="text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400"><PencilIcon/></button>
+        <button onClick={() => setIsEditing(true)} className="text-slate-400 hover:text-violet-500 dark:hover:text-violet-400"><PencilIcon/></button>
         <button onClick={() => onDelete(subTask.id)} className="text-slate-400 hover:text-red-500 dark:hover:text-red-400"><TrashIcon/></button>
       </div>
     </div>

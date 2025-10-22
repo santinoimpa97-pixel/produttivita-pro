@@ -604,7 +604,7 @@ function App() {
   };
 
   if (authLoading) {
-    return <div className="bg-slate-100 dark:bg-slate-900 min-h-screen flex items-center justify-center text-slate-500">Verifica in corso...</div>;
+    return <div className="bg-slate-100 dark:bg-[#020617] min-h-screen flex items-center justify-center text-slate-500">Verifica in corso...</div>;
   }
 
   if (!session || !user) {
@@ -612,7 +612,7 @@ function App() {
   }
 
   return (
-    <div className="bg-slate-100 dark:bg-slate-900 min-h-screen font-sans pb-24 md:pb-4">
+    <div className="bg-slate-100 dark:bg-[#020617] min-h-screen font-sans pb-24 md:pb-4">
       <Header 
         user={user} 
         onLogout={handleLogout} 

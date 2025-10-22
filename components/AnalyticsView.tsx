@@ -2,7 +2,7 @@ import React from 'react';
 import { Task, Priority } from '../types';
 
 const StatCard: React.FC<{ title: string; value: string | number; description: string }> = ({ title, value, description }) => (
-    <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg">
+    <div className="bg-slate-100 dark:bg-slate-900 p-4 rounded-lg">
         <p className="text-sm text-slate-500 dark:text-slate-400">{title}</p>
         <p className="text-3xl font-bold text-slate-800 dark:text-slate-100">{value}</p>
         <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
@@ -13,12 +13,12 @@ const CompletionPieChart: React.FC<{ completed: number; pending: number }> = ({ 
     const total = completed + pending;
     if (total === 0) return <div className="flex items-center justify-center h-40 text-slate-500">Nessun dato</div>;
     const completedPercentage = (completed / total) * 100;
-    const conicGradient = `conic-gradient(#10b981 ${completedPercentage}%, #f1f5f9 0)`;
+    const conicGradient = `conic-gradient(#10b981 ${completedPercentage}%, #334155 0)`;
 
     return (
         <div className="flex items-center gap-4">
             <div style={{ background: conicGradient }} className="w-24 h-24 rounded-full flex items-center justify-center">
-                <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center">
+                <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center">
                    <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{Math.round(completedPercentage)}%</span>
                 </div>
             </div>
@@ -28,7 +28,7 @@ const CompletionPieChart: React.FC<{ completed: number; pending: number }> = ({ 
                     <span className="text-slate-600 dark:text-slate-300">Completate: {completed}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                    <div className="w-3 h-3 rounded-full bg-slate-700"></div>
                     <span className="text-slate-600 dark:text-slate-300">In Sospeso: {pending}</span>
                 </div>
             </div>
@@ -46,7 +46,7 @@ const AnalyticsView: React.FC<{ tasks: Task[] }> = ({ tasks }) => {
     const lowPriority = tasks.filter(t => t.priority === Priority.Low).length;
   
     return (
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg space-y-6">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg space-y-6">
         <div>
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Panoramica Produttività</h2>
             <div className="grid grid-cols-2 gap-4">

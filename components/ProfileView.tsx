@@ -69,7 +69,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onLogout, onUpdateUser 
 
   return (
     <div className="space-y-6 animate-fade-in">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-lg">
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Informazioni Profilo</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Aggiorna le tue informazioni personali.</p>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
@@ -83,16 +83,16 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onLogout, onUpdateUser 
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <UserIcon className="h-5 w-5 text-slate-400" />
                         </div>
-                        <input id="displayName" type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-indigo-500 focus:border-indigo-500" />
+                        <input id="displayName" type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-violet-500 focus:border-violet-500" />
                     </div>
                 </div>
-                <button type="submit" disabled={loadingProfile} className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 disabled:bg-indigo-400">
+                <button type="submit" disabled={loadingProfile} className="px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 disabled:bg-violet-400">
                     {loadingProfile ? 'Salvataggio...' : 'Salva Profilo'}
                 </button>
             </form>
         </div>
 
-         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
+         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-lg">
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Cambia Password</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Assicurati di usare una password sicura.</p>
             <form onSubmit={handleUpdatePassword} className="space-y-4">
@@ -102,7 +102,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onLogout, onUpdateUser 
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <KeyIcon className="h-5 w-5 text-slate-400" />
                         </div>
-                        <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-indigo-500 focus:border-indigo-500" />
+                        <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-violet-500 focus:border-violet-500" />
                     </div>
                 </div>
                  <div>
@@ -111,10 +111,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onLogout, onUpdateUser 
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <KeyIcon className="h-5 w-5 text-slate-400" />
                         </div>
-                        <input id="confirmPassword" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-indigo-500 focus:border-indigo-500" />
+                        <input id="confirmPassword" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-violet-500 focus:border-violet-500" />
                     </div>
                 </div>
-                <button type="submit" disabled={loadingPassword} className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 disabled:bg-indigo-400">
+                <button type="submit" disabled={loadingPassword} className="px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 disabled:bg-violet-400">
                     {loadingPassword ? 'Aggiornamento...' : 'Aggiorna Password'}
                 </button>
             </form>

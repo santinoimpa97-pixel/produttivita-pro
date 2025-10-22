@@ -69,21 +69,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
     
     return (
         <div className="space-y-6 animate-fade-in">
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Aggiungi Appuntamento</h2>
                 <form onSubmit={handleAddAppointment} className="space-y-4">
-                    <input type="text" value={newAppointmentText} onChange={e => setNewAppointmentText(e.target.value)} placeholder="Descrizione appuntamento" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" required />
+                    <input type="text" value={newAppointmentText} onChange={e => setNewAppointmentText(e.target.value)} placeholder="Descrizione appuntamento" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500" required />
                     <div className="flex gap-4">
-                        <input type="date" value={newAppointmentDate} onChange={e => setNewAppointmentDate(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" required />
-                        <input type="time" value={newAppointmentTime} onChange={e => setNewAppointmentTime(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500" required />
+                        <input type="date" value={newAppointmentDate} onChange={e => setNewAppointmentDate(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500" required />
+                        <input type="time" value={newAppointmentTime} onChange={e => setNewAppointmentTime(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500" required />
                     </div>
-                    <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">
+                    <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700">
                         <PlusIcon className="w-5 h-5"/> Aggiungi
                     </button>
                 </form>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
                 <div className="flex justify-between items-center mb-4">
                     <button onClick={() => changeMonth(-1)} className="px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600">&lt;</button>
                     <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 capitalize">
@@ -101,13 +101,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                         const dayAppointments = appointmentsByDate[dateStr] || [];
                         const isToday = new Date().toISOString().split('T')[0] === dateStr;
                         return (
-                            <div key={day.toString()} className={`p-2 border rounded-md min-h-[100px] text-left align-top ${isToday ? 'bg-indigo-100 dark:bg-indigo-900/50 border-indigo-300 dark:border-indigo-700' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'}`}>
-                                <span className={`font-bold ${isToday ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>{day.getDate()}</span>
+                            <div key={day.toString()} className={`p-2 border rounded-md min-h-[100px] text-left align-top ${isToday ? 'bg-violet-100 dark:bg-violet-900/50 border-violet-300 dark:border-violet-700' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'}`}>
+                                <span className={`font-bold ${isToday ? 'text-violet-600 dark:text-violet-300' : 'text-slate-700 dark:text-slate-300'}`}>{day.getDate()}</span>
                                 <div className="mt-1 space-y-1">
                                     {dayAppointments.sort((a,b) => a.time.localeCompare(b.time)).map(app => (
-                                        <div key={app.id} className="text-xs p-1 bg-indigo-200 dark:bg-indigo-900 rounded-md text-indigo-800 dark:text-indigo-200 flex justify-between items-center group">
+                                        <div key={app.id} className="text-xs p-1 bg-violet-200 dark:bg-violet-900 rounded-md text-violet-800 dark:text-violet-200 flex justify-between items-center group">
                                             <span className="truncate"><strong>{app.time.substring(0, 5)}</strong> - {app.text}</span>
-                                            <button onClick={() => onDeleteAppointment(app.id)} className="opacity-0 group-hover:opacity-100 text-indigo-500 hover:text-red-500 flex-shrink-0">
+                                            <button onClick={() => onDeleteAppointment(app.id)} className="opacity-0 group-hover:opacity-100 text-violet-500 hover:text-red-500 flex-shrink-0">
                                                 <TrashIcon className="w-3 h-3"/>
                                             </button>
                                         </div>
@@ -119,7 +119,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                 </div>
             </div>
             
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Prossimi Appuntamenti</h2>
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                     {upcomingAppointments.length > 0 ? (
@@ -133,7 +133,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                                         {new Date(app.date).toLocaleDateString('it-IT', { month: 'short' })}
                                     </p>
                                 </div>
-                                <div className="border-l-2 border-indigo-500 pl-4 flex-grow">
+                                <div className="border-l-2 border-violet-500 pl-4 flex-grow">
                                     <p className="font-semibold text-slate-800 dark:text-slate-200">{app.text}</p>
                                     <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
                                         <ClockIcon className="w-4 h-4" />

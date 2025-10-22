@@ -19,7 +19,7 @@ const TaskCategory: React.FC<TaskCategoryProps> = ({ title, tasks, defaultOpen =
     }
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg overflow-hidden">
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full flex justify-between items-center p-4 text-left"

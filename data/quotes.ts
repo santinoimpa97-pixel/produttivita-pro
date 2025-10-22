@@ -1,4 +1,5 @@
 export const motivationalQuotes = [
+  "L'ostacolo è la via.",
   "Il viaggio di mille miglia inizia con un singolo passo.",
   "Siamo ciò che facciamo ripetutamente. L'eccellenza, quindi, non è un'azione, ma un'abitudine.",
   "Non è perché le cose sono difficili che non osiamo, è perché non osiamo che sono difficili.",
@@ -9,6 +10,5 @@ export const motivationalQuotes = [
   "La felicità non è qualcosa di già pronto. Viene dalle tue azioni.",
   "Per aspera ad astra.",
   "La vita si restringe o si espande in proporzione al proprio coraggio.",
-  "L'ostacolo è la via.",
   "Diventa ciò che sei."
 ];

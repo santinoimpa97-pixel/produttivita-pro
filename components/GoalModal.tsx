@@ -42,7 +42,7 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg w-full max-w-lg m-auto flex flex-col max-h-[90vh]">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg w-full max-w-lg m-auto flex flex-col max-h-[90vh]">
                 <form onSubmit={handleSubmit} className="flex flex-col h-full">
                     <div className="p-6 space-y-4 overflow-y-auto">
                         <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
@@ -56,7 +56,7 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Es. Imparare a suonare la chitarra"
-                                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500"
+                                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500"
                                 required
                             />
                         </div>
@@ -68,7 +68,7 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Descrivi i passi o la motivazione dietro questo obiettivo."
                                 rows={3}
-                                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500"
+                                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500"
                             />
                         </div>
                         <div>
@@ -78,15 +78,15 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                                 type="date"
                                 value={targetDate}
                                 onChange={(e) => setTargetDate(e.target.value)}
-                                className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500"
+                                className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500"
                             />
                         </div>
                     </div>
-                    <div className="bg-slate-100 dark:bg-slate-700/50 px-6 py-3 flex justify-end gap-3 rounded-b-xl mt-auto">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-800 font-semibold rounded-lg hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-100 dark:hover:bg-slate-500">
+                    <div className="bg-slate-100 dark:bg-slate-800/50 px-6 py-3 flex justify-end gap-3 rounded-b-xl mt-auto">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-800 font-semibold rounded-lg hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600">
                             Annulla
                         </button>
-                        <button type="submit" className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">
+                        <button type="submit" className="px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700">
                             Salva Obiettivo
                         </button>
                     </div>

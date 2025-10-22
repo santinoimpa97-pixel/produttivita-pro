@@ -78,13 +78,13 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const pClasses = priorityClasses[task.priority];
 
   return (
-    <div className={`bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border-l-4 ${pClasses.border} transition-all duration-300`}>
+    <div className={`bg-white dark:bg-slate-900 p-4 rounded-xl shadow-md border-l-4 ${pClasses.border} transition-all duration-300`}>
       <div className="flex items-start gap-4">
         <input
           type="checkbox"
           checked={task.completed}
           onChange={() => onToggle(task.id)}
-          className="h-6 w-6 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 mt-1 cursor-pointer"
+          className="h-6 w-6 rounded border-slate-300 text-violet-600 focus:ring-violet-500 mt-1 cursor-pointer"
         />
         <div className="flex-grow">
           {isEditing ? (
@@ -95,7 +95,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
               onChange={(e) => setEditText(e.target.value)}
               onBlur={handleUpdate}
               onKeyDown={handleKeyDown}
-              className="w-full text-lg font-semibold bg-transparent text-slate-800 dark:text-slate-100 border-b border-indigo-500 focus:outline-none"
+              className="w-full text-lg font-semibold bg-transparent text-slate-800 dark:text-slate-100 border-b border-violet-500 focus:outline-none"
             />
           ) : (
              <p onClick={() => onToggle(task.id)} className={`text-lg font-semibold cursor-pointer text-slate-800 dark:text-slate-100 ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>
@@ -113,7 +113,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-2">
-          <button onClick={() => setIsEditing(true)} className="p-2 text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><PencilIcon/></button>
+          <button onClick={() => setIsEditing(true)} className="p-2 text-slate-500 hover:text-violet-500 dark:hover:text-violet-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><PencilIcon/></button>
           <button onClick={() => onDelete(task.id)} className="p-2 text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><TrashIcon/></button>
         </div>
       </div>
@@ -121,7 +121,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
       <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
         <button
           onClick={() => setIsSubtasksVisible(!isSubtasksVisible)}
-          className="w-full flex justify-between items-center text-left text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400"
+          className="w-full flex justify-between items-center text-left text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400"
         >
           <span>Sotto-attività ({task.subTasks.length})</span>
           <ChevronDownIcon className={`w-5 h-5 transition-transform ${isSubtasksVisible ? 'rotate-180' : ''}`}/>
@@ -144,18 +144,18 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 value={newSubTaskText}
                 onChange={(e) => setNewSubTaskText(e.target.value)}
                 placeholder="Aggiungi sotto-attività..."
-                className="flex-grow px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="flex-grow px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
               />
-              <button type="submit" className="p-1.5 text-slate-500 hover:text-indigo-600 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600"><PlusIcon className="w-5 h-5"/></button>
+              <button type="submit" className="p-1.5 text-slate-500 hover:text-violet-600 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600"><PlusIcon className="w-5 h-5"/></button>
             </form>
             <button
               onClick={() => onGenerateSubtasks(task.id, task.text)}
               disabled={isGenerating}
-              className="w-full mt-3 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-indigo-50 text-indigo-700 font-semibold rounded-lg hover:bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-300 dark:hover:bg-indigo-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="w-full mt-3 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-violet-50 text-violet-700 font-semibold rounded-lg hover:bg-violet-100 dark:bg-violet-900/50 dark:text-violet-300 dark:hover:bg-violet-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {isGenerating ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-violet-500" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>

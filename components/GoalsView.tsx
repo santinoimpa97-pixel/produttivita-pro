@@ -53,11 +53,11 @@ const GoalsView: React.FC<GoalsViewProps> = (props) => {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg flex justify-between items-center">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg flex justify-between items-center">
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">I tuoi Obiettivi</h2>
                 <button
                     onClick={handleOpenAddModal}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
                 >
                     <PlusIcon className="w-5 h-5" />
                     Nuovo Obiettivo
@@ -78,7 +78,7 @@ const GoalsView: React.FC<GoalsViewProps> = (props) => {
                         />
                     ))
                 ) : (
-                    <div className="text-center py-6 px-4 bg-white dark:bg-slate-800 rounded-xl shadow-md">
+                    <div className="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-xl shadow-md">
                         <p className="text-slate-500 dark:text-slate-400">Nessun obiettivo definito. Inizia a pianificare in grande!</p>
                     </div>
                 )}

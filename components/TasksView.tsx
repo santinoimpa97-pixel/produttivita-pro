@@ -56,13 +56,13 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
     <div className="space-y-6 animate-fade-in">
       <TaskInput onAddTask={onAddTask} />
 
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
         <input
             type="text"
             placeholder="Cerca in tutte le attività..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 mb-4"
+            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 mb-4"
         />
       </div>
 
@@ -75,7 +75,7 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
       </div>
 
       {tasks.length === 0 && (
-        <div className="text-center py-6 px-4 bg-white dark:bg-slate-800 rounded-xl shadow-md">
+        <div className="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-xl shadow-md">
             <p className="text-slate-500 dark:text-slate-400 mb-2">
               Nessuna attività ancora. Aggiungine una per iniziare!
             </p>

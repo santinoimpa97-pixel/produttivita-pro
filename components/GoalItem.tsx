@@ -19,7 +19,7 @@ const GoalItem: React.FC<GoalItemProps> = ({ goal, tasks, onEdit, onDelete, onLi
     const progress = linkedTasks.length > 0 ? (completedTasks / linkedTasks.length) * 100 : (goal.completed ? 100 : 0);
 
     return (
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md space-y-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-md space-y-3">
             <div className="flex items-start justify-between gap-4">
                 <div className="flex-grow">
                     <div className="flex items-center gap-3">
@@ -27,7 +27,7 @@ const GoalItem: React.FC<GoalItemProps> = ({ goal, tasks, onEdit, onDelete, onLi
                             type="checkbox"
                             checked={goal.completed}
                             onChange={() => onToggleGoal(goal.id)}
-                            className="h-6 w-6 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            className="h-6 w-6 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
                         />
                         <div>
                             <h3 className={`text-lg font-bold text-slate-800 dark:text-slate-100 ${goal.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>{goal.title}</h3>
@@ -37,8 +37,8 @@ const GoalItem: React.FC<GoalItemProps> = ({ goal, tasks, onEdit, onDelete, onLi
                     {goal.description && <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 pl-9">{goal.description}</p>}
                 </div>
                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={() => onLinkTasks(goal)} title="Collega Attività" className="p-2 text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><ChecklistIcon className="w-5 h-5"/></button>
-                    <button onClick={() => onEdit(goal)} className="p-2 text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><PencilIcon /></button>
+                    <button onClick={() => onLinkTasks(goal)} title="Collega Attività" className="p-2 text-slate-500 hover:text-violet-500 dark:hover:text-violet-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><ChecklistIcon className="w-5 h-5"/></button>
+                    <button onClick={() => onEdit(goal)} className="p-2 text-slate-500 hover:text-violet-500 dark:hover:text-violet-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><PencilIcon /></button>
                     <button onClick={() => onDelete(goal.id)} className="p-2 text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><TrashIcon /></button>
                 </div>
             </div>
@@ -48,7 +48,7 @@ const GoalItem: React.FC<GoalItemProps> = ({ goal, tasks, onEdit, onDelete, onLi
                     <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{Math.round(progress)}%</span>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
-                    <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                    <div className="bg-violet-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
                 </div>
                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     {completedTasks} di {linkedTasks.length} attività completate
