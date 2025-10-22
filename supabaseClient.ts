@@ -1,18 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Per far funzionare l'app all'interno di AI Studio, le chiavi di Supabase
-// devono essere inserite direttamente qui.
-// Quando pubblicherai l'app su un servizio come Vercel, è più sicuro 
-// usare le "Environment Variables".
+// --- CONFIGURAZIONE PER AI STUDIO ---
+// In questo ambiente, le chiavi sono scritte direttamente nel codice.
+// Questo permette all'app di funzionare qui per lo sviluppo.
+// Quando pubblicherai su Vercel, dovrai usare la versione di questo file
+// che legge le chiavi da 'process.env'.
+
 const supabaseUrl = 'https://ystdeennihpqrlqtveey.supabase.co';
 
-// La chiave "anon" di Supabase. Assicurati che sia quella corretta per il tuo progetto.
+// !!! IMPORTANTE !!!
+// Assicurati che la chiave qui sotto sia la tua vera "chiave anonima" di Supabase.
+// Se questa chiave non è corretta, l'applicazione non riuscirà a connettersi al database.
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzdGRlZW5uaWhwcXJscXR2ZWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwNjExNzcsImV4cCI6MjA3NjYzNzE3N30.HP6dajQFlql3Uv1IWmio8jPsir34DEQT2amAfWgRKh8';
 
-// Se l'URL o la chiave sono mancanti, la funzione createClient genererà un errore, 
-// che è il comportamento corretto.
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("URL o chiave Supabase mancanti. Controlla il file supabaseClient.ts");
-}
-
+// Inizializza il client di Supabase.
+// Se l'URL o la chiave non sono corretti, vedrai degli errori nella console del browser
+// quando l'app proverà a interagire con il database.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
