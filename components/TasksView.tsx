@@ -1,0 +1,88 @@
+import React, { useState } from 'react';
+import { Task, Priority } from '../types';
+import TaskInput from './TaskInput';
+import TaskList from './TaskList';
+import TaskCategory from './TaskCategory';
+
+interface TasksViewProps {
+  tasks: Task[];
+  onAddTask: (text: string, priority: Priority, dueDate: string | null) => void;
+  onToggleTask: (id: string) => void;
+  onDeleteTask: (id: string) => void;
+  onUpdateTask: (id: string, newText: string) => void;
+  onAddSubTask: (taskId: string, subTaskText: string) => void;
+  onToggleSubTask: (taskId: string, subTaskId: string) => void;
+  onDeleteSubTask: (taskId: string, subTaskId: string) => void;
+  onUpdateSubTask: (taskId: string, subTaskId: string, newText: string) => void;
+  onGenerateSubtasks: (taskId: string, taskText: string) => void;
+  generatingTaskId: string | null;
+}
+
+const TasksView: React.FC<TasksViewProps> = (props) => {
+  const { tasks, onAddTask, ...taskListProps } = props;
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const today = new Date();
+  today.setHours(23, 59, 59, 999); // End of today
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(23, 59, 59, 999); // End of yesterday
+
+  const searchedTasks = tasks.filter(task => 
+    task.text.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const overdueTasks = searchedTasks.filter(
+    (task) => !task.completed && task.dueDate && new Date(task.dueDate) <= yesterday
+  );
+
+  const todayTasks = searchedTasks.filter(
+    (task) => !task.completed && task.dueDate && new Date(task.dueDate) > yesterday && new Date(task.dueDate) <= today
+  );
+
+  const upcomingTasks = searchedTasks.filter(
+    (task) => !task.completed && task.dueDate && new Date(task.dueDate) > today
+  );
+
+  const noDueDateTasks = searchedTasks.filter(
+    (task) => !task.completed && !task.dueDate
+  );
+  
+  const completedTasks = searchedTasks.filter((task) => task.completed);
+
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <TaskInput onAddTask={onAddTask} />
+
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg">
+        <input
+            type="text"
+            placeholder="Cerca in tutte le attività..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 mb-4"
+        />
+      </div>
+
+      <div className="space-y-4">
+        <TaskCategory title="In Scadenza" tasks={overdueTasks} {...taskListProps} defaultOpen={true} />
+        <TaskCategory title="Oggi" tasks={todayTasks} {...taskListProps} defaultOpen={true} />
+        <TaskCategory title="Prossimamente" tasks={upcomingTasks} {...taskListProps} />
+        <TaskCategory title="Senza Scadenza" tasks={noDueDateTasks} {...taskListProps} />
+        <TaskCategory title="Completate" tasks={completedTasks} {...taskListProps} />
+      </div>
+
+      {tasks.length === 0 && (
+        <div className="text-center py-6 px-4 bg-white dark:bg-slate-800 rounded-xl shadow-md">
+            <p className="text-slate-500 dark:text-slate-400 mb-2">
+              Nessuna attività ancora. Aggiungine una per iniziare!
+            </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TasksView;

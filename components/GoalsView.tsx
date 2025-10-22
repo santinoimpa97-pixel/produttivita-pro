@@ -1,0 +1,108 @@
+import React from 'react';
+import { Goal, Task } from '../types';
+import { PlusIcon } from './icons/PlusIcon';
+import GoalItem from './GoalItem';
+import GoalModal from './GoalModal';
+import LinkTasksModal from './LinkTasksModal';
+
+interface GoalsViewProps {
+    goals: Goal[];
+    tasks: Task[];
+    onAddGoal: (goal: Omit<Goal, 'id' | 'completed' | 'linkedTaskIds'>) => void;
+    onUpdateGoal: (goal: Omit<Goal, 'completed' | 'linkedTaskIds'>) => void;
+    onDeleteGoal: (id: string) => void;
+    onToggleGoal: (id: string) => void;
+    onToggleLinkTask: (goalId: string, taskId: string) => void;
+}
+
+const GoalsView: React.FC<GoalsViewProps> = (props) => {
+    const [isGoalModalOpen, setIsGoalModalOpen] = React.useState(false);
+    const [goalToEdit, setGoalToEdit] = React.useState<Goal | null>(null);
+
+    const [isLinkModalOpen, setIsLinkModalOpen] = React.useState(false);
+    const [goalToLink, setGoalToLink] = React.useState<Goal | null>(null);
+
+    const handleSaveGoal = (goalData: Omit<Goal, 'id' | 'completed' | 'linkedTaskIds'> & { id?: string }) => {
+        if (goalData.id) {
+            props.onUpdateGoal({ id: goalData.id, ...goalData });
+        } else {
+            props.onAddGoal(goalData);
+        }
+    };
+
+    const handleEditGoal = (goal: Goal) => {
+        setGoalToEdit(goal);
+        setIsGoalModalOpen(true);
+    };
+    
+    const handleOpenAddModal = () => {
+        setGoalToEdit(null);
+        setIsGoalModalOpen(true);
+    }
+    
+    const handleLinkTasks = (goal: Goal) => {
+        setGoalToLink(goal);
+        setIsLinkModalOpen(true);
+    }
+    
+    const handleToggleLink = (taskId: string) => {
+        if(goalToLink) {
+            props.onToggleLinkTask(goalToLink.id, taskId);
+        }
+    }
+
+    return (
+        <div className="space-y-6 animate-fade-in">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg flex justify-between items-center">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">I tuoi Obiettivi</h2>
+                <button
+                    onClick={handleOpenAddModal}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                    <PlusIcon className="w-5 h-5" />
+                    Nuovo Obiettivo
+                </button>
+            </div>
+            
+            <div className="space-y-4">
+                {props.goals.length > 0 ? (
+                    props.goals.map(goal => (
+                        <GoalItem 
+                            key={goal.id}
+                            goal={goal}
+                            tasks={props.tasks}
+                            onEdit={handleEditGoal}
+                            onDelete={props.onDeleteGoal}
+                            onLinkTasks={handleLinkTasks}
+                            onToggleGoal={props.onToggleGoal}
+                        />
+                    ))
+                ) : (
+                    <div className="text-center py-6 px-4 bg-white dark:bg-slate-800 rounded-xl shadow-md">
+                        <p className="text-slate-500 dark:text-slate-400">Nessun obiettivo definito. Inizia a pianificare in grande!</p>
+                    </div>
+                )}
+            </div>
+
+            <GoalModal 
+                isOpen={isGoalModalOpen}
+                onClose={() => setIsGoalModalOpen(false)}
+                onSave={handleSaveGoal}
+                goalToEdit={goalToEdit}
+            />
+
+            {goalToLink && (
+                <LinkTasksModal
+                    isOpen={isLinkModalOpen}
+                    onClose={() => setIsLinkModalOpen(false)}
+                    tasks={props.tasks}
+                    linkedTaskIds={goalToLink.linkedTaskIds}
+                    onToggleLinkTask={handleToggleLink}
+                    goalTitle={goalToLink.title}
+                />
+            )}
+        </div>
+    );
+};
+
+export default GoalsView;
