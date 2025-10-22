@@ -1,15 +1,11 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// --- CONFIGURAZIONE CORRETTA PER L'AMBIENTE VERCEL E SVILUPPO CON VITE ---
-// Vite espone le variabili d'ambiente che iniziano con VITE_ a `import.meta.env`.
-// Questo è il modo corretto per accedere alle chiavi API nel codice client-side.
-// FIX: According to the guidelines, the API key must be obtained exclusively from process.env.API_KEY.
-const apiKey = process.env.API_KEY;
+// --- CONFIGURAZIONE PER L'AMBIENTE DI SVILUPPO (AI Studio) ---
+// La chiave API è inserita direttamente per far funzionare l'app qui.
+const apiKey = 'AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ';
 
 if (!apiKey) {
-    // Questo errore bloccherà l'app e sarà visibile nella console del browser
-    // se la variabile API_KEY non è configurata correttamente.
-    throw new Error("La chiave API di Gemini (API_KEY) non è stata trovata nell'ambiente.");
+    throw new Error("La chiave API di Gemini è mancante.");
 }
 const ai = new GoogleGenAI({ apiKey });
 
