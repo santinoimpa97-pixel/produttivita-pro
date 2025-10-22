@@ -1,17 +1,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 // --- CONFIGURAZIONE PER AI STUDIO (SVILUPPO LOCALE) ---
-// Per far funzionare le funzionalità di IA in AI Studio, devi inserire la tua chiave API qui.
-// ATTENZIONE: Per la pubblicazione su Vercel, usa la versione di questo file
-// che legge la chiave dalle "Environment Variables" (VITE_API_KEY) per non esporla pubblicamente.
+// Ho inserito la chiave API che hai fornito.
 
 const API_KEY = 'AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ';
 
-// Controlla se la chiave API è stata inserita. Se manca, le funzionalità IA non funzioneranno.
-if (API_KEY.startsWith('AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ')) {
-  // Non bloccare l'app, ma avvisa nella console. Le chiamate all'API falliranno.
-  console.warn("Chiave API Gemini mancante! Apri il file 'services/geminiService.ts' e inserisci la tua chiave API per abilitare le funzionalità di intelligenza artificiale.");
-}
+// Ho rimosso il controllo che causava l'errore. L'app ora si fiderà di questa chiave.
+// Se dovessi avere ancora problemi, assicurati che questa chiave sia valida e abilitata per il tuo progetto.
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
@@ -21,10 +16,7 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
  * @returns A promise that resolves to an array of subtask strings.
  */
 export const generateSubtasksFromGemini = async (taskText: string): Promise<string[]> => {
-  if (API_KEY.startsWith('AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ')) {
-    alert("Funzionalità IA non attiva: manca la chiave API di Gemini nel file 'services/geminiService.ts'.");
-    return [];
-  }
+  // Ho rimosso il blocco che impediva l'esecuzione.
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash", 
@@ -65,6 +57,8 @@ export const generateSubtasksFromGemini = async (taskText: string): Promise<stri
 
   } catch (error) {
     console.error("Errore durante la generazione dei sotto-task con Gemini:", error);
+    // In caso di errore (es. chiave API non valida), ritorna un array vuoto e non blocca l'app.
+    alert(`Si è verificato un errore con l'IA. Controlla che la chiave API sia corretta. Dettagli: ${error.message}`);
     return [];
   }
 };
@@ -75,10 +69,7 @@ export const generateSubtasksFromGemini = async (taskText: string): Promise<stri
  * @returns A promise that resolves to an array of task strings.
  */
 export const generateRoutineTasks = async (routineName: string): Promise<string[]> => {
-  if (API_KEY.startsWith('AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ')) {
-    alert("Funzionalità IA non attiva: manca la chiave API di Gemini nel file 'services/geminiService.ts'.");
-    return [];
-  }
+  // Ho rimosso il blocco che impediva l'esecuzione.
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -119,6 +110,7 @@ export const generateRoutineTasks = async (routineName: string): Promise<string[
 
   } catch (error) {
     console.error("Errore durante la generazione dei compiti di routine con Gemini:", error);
+    alert(`Si è verificato un errore con l'IA. Controlla che la chiave API sia corretta. Dettagli: ${error.message}`);
     return [];
   }
 };
