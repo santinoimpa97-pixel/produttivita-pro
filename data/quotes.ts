@@ -1,14 +1,14 @@
 export const motivationalQuotes = [
-  "Il modo migliore per predire il futuro è crearlo.",
-  "La fortuna favorisce gli audaci.",
-  "Il successo non è definitivo, il fallimento non è fatale: è il coraggio di continuare che conta.",
-  "L'unica vera saggezza è sapere di non sapere nulla.",
-  "Non ho fallito. Ho solo trovato 10.000 modi che non funzionano.",
-  "Un investimento in conoscenza paga il miglior interesse.",
-  "Agisci come se ciò che fai facesse la differenza. La fa.",
-  "Se vuoi sollevarti, solleva qualcun altro.",
-  "La logica ti porterà da A a B. L'immaginazione ti porterà ovunque.",
-  "Le difficoltà rafforzano la mente, come il lavoro fa con il corpo.",
-  "È difficile fallire, ma è peggio non aver mai provato a riuscire.",
-  "Credi di poterlo fare e sei già a metà strada."
+  "Siamo ciò che facciamo ripetutamente. L'eccellenza, quindi, non è un atto, ma un'abitudine.",
+  "La disciplina è il ponte tra gli obiettivi e la realizzazione.",
+  "La nostra gloria più grande non sta nel non cadere mai, ma nel rialzarci ogni volta che cadiamo.",
+  "Non desiderare che le cose siano più facili, desidera di essere migliore.",
+  "L'ostacolo è la via.",
+  "Il segreto del successo è la costanza verso lo scopo.",
+  "La mente è tutto. Ciò che pensi, diventi.",
+  "Un uomo che conquista se stesso è più grande di colui che conquista mille uomini in battaglia.",
+  "Il punto di partenza di ogni realizzazione è il desiderio.",
+  "Se stai attraversando l'inferno, continua a camminare.",
+  "La ricchezza non consiste nell'avere grandi possedimenti, ma nell'avere pochi desideri.",
+  "Non è ciò che ti accade, ma come reagisci che conta."
 ];
