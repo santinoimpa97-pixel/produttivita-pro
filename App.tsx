@@ -21,8 +21,7 @@ import AnalyticsView from './components/AnalyticsView';
 import ProfileView from './components/ProfileView';
 import BottomNav, { View } from './components/BottomNav';
 import { supabase } from './supabaseClient';
-import { generateSubtasksFromGemini, generateRoutineTasks } from './services/geminiService';
-import { motivationalQuotes } from './data/quotes';
+import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote } from './services/geminiService';
 
 // Main App Component
 function App() {
@@ -43,7 +42,7 @@ function App() {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
   });
   const [view, setView] = useState<View>('tasks');
-  const [subtitle, setSubtitle] = useState('');
+  const [subtitle, setSubtitle] = useState('Caricamento frase del giorno...');
   
   // Data States
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -58,7 +57,11 @@ function App() {
 
   // Effects
   useEffect(() => {
-    setSubtitle(motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]);
+    const fetchQuote = async () => {
+        const quote = await generateMotivationalQuote();
+        setSubtitle(quote);
+    };
+    fetchQuote();
   }, []);
 
   useEffect(() => {

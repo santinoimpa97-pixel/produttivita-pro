@@ -10,10 +10,20 @@ interface CalendarViewProps {
     onDeleteAppointment: (id: string) => void;
 }
 
+
+// Helper function to get a YYYY-MM-DD string from a Date object in the local timezone
+const toLocalISOString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+
 const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointment, onDeleteAppointment }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [newAppointmentText, setNewAppointmentText] = useState('');
-    const [newAppointmentDate, setNewAppointmentDate] = useState(new Date().toISOString().split('T')[0]);
+    const [newAppointmentDate, setNewAppointmentDate] = useState(toLocalISOString(new Date()));
     const [newAppointmentTime, setNewAppointmentTime] = useState('12:00');
 
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -27,20 +37,29 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
         return days;
     }, [currentDate, lastDayOfMonth]);
     
+    // Sunday is 0, Monday is 1, etc.
     const startingDayOfWeek = firstDayOfMonth.getDay(); 
 
-    const appointmentsByDate = useMemo(() => {
-        return appointments.reduce((acc, app) => {
-            (acc[app.date] = acc[app.date] || []).push(app);
-            return acc;
-        }, {} as Record<string, Appointment[]>);
+    const allAppointmentsByDate = useMemo(() => {
+        const events: Record<string, Appointment[]> = {};
+
+        appointments.forEach(app => {
+            (events[app.date] = events[app.date] || []).push(app);
+        });
+        
+        // Sort events within each day by time
+        for (const date in events) {
+            events[date].sort((a, b) => a.time.localeCompare(b.time));
+        }
+
+        return events;
     }, [appointments]);
     
     const upcomingAppointments = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+        const todayStr = toLocalISOString(new Date());
+        
         return appointments
-            .filter(app => new Date(app.date) >= today)
+            .filter(app => app.date >= todayStr)
             .sort((a, b) => {
                 const dateA = new Date(`${a.date}T${a.time}`);
                 const dateB = new Date(`${b.date}T${b.time}`);
@@ -65,7 +84,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1));
     };
 
-    const weekDays = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+    const weekDays = ['Do', 'Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa'];
     
     return (
         <div className="space-y-6 animate-fade-in">
@@ -91,31 +110,38 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                     </h2>
                     <button onClick={() => changeMonth(1)} className="px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600">&gt;</button>
                 </div>
-                <div className="grid grid-cols-7 gap-1 text-center font-semibold text-slate-500 dark:text-slate-400 text-sm">
-                    {weekDays.map(day => <div key={day}>{day}</div>)}
-                </div>
-                <div className="grid grid-cols-7 gap-1 mt-2">
-                    {Array(startingDayOfWeek).fill(null).map((_, index) => <div key={`empty-${index}`} className="border rounded-md border-transparent"></div>)}
-                    {daysInMonth.map(day => {
-                        const dateStr = day.toISOString().split('T')[0];
-                        const dayAppointments = appointmentsByDate[dateStr] || [];
-                        const isToday = new Date().toISOString().split('T')[0] === dateStr;
-                        return (
-                            <div key={day.toString()} className={`p-2 border rounded-md min-h-[100px] text-left align-top ${isToday ? 'bg-violet-100 dark:bg-violet-900/50 border-violet-300 dark:border-violet-700' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'}`}>
-                                <span className={`font-bold ${isToday ? 'text-violet-600 dark:text-violet-300' : 'text-slate-700 dark:text-slate-300'}`}>{day.getDate()}</span>
-                                <div className="mt-1 space-y-1">
-                                    {dayAppointments.sort((a,b) => a.time.localeCompare(b.time)).map(app => (
-                                        <div key={app.id} className="text-xs p-1 bg-violet-200 dark:bg-violet-900 rounded-md text-violet-800 dark:text-violet-200 flex justify-between items-center group">
-                                            <span className="truncate"><strong>{app.time.substring(0, 5)}</strong> - {app.text}</span>
-                                            <button onClick={() => onDeleteAppointment(app.id)} className="opacity-0 group-hover:opacity-100 text-violet-500 hover:text-red-500 flex-shrink-0">
-                                                <TrashIcon className="w-3 h-3"/>
-                                            </button>
-                                        </div>
-                                    ))}
+                
+                {/* Responsive Grid View */}
+                <div>
+                    <div className="grid grid-cols-7 gap-1 text-center font-semibold text-slate-500 dark:text-slate-400 text-xs md:text-sm">
+                        {weekDays.map(day => <div key={day}>{day}</div>)}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 mt-2">
+                        {Array(startingDayOfWeek).fill(null).map((_, index) => <div key={`empty-${index}`} className="border rounded-md border-transparent"></div>)}
+                        {daysInMonth.map(day => {
+                            const dateStr = toLocalISOString(day);
+                            const dayAppointments = allAppointmentsByDate[dateStr] || [];
+                            const isToday = toLocalISOString(new Date()) === dateStr;
+                            return (
+                                <div key={day.toString()} className={`p-1 md:p-2 border rounded-md min-h-[80px] md:min-h-[100px] text-left align-top transition-colors ${isToday ? 'bg-violet-100 dark:bg-violet-900/50 border-violet-300 dark:border-violet-700' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'}`}>
+                                    <span className={`text-sm md:text-base font-bold ${isToday ? 'text-violet-600 dark:text-violet-300' : 'text-slate-700 dark:text-slate-300'}`}>{day.getDate()}</span>
+                                    <div className="mt-1 space-y-1">
+                                        {dayAppointments.map(appointment => (
+                                             <div key={appointment.id} className="text-xs p-1 rounded-md flex items-start gap-1 group bg-violet-200 dark:bg-violet-900 text-violet-800 dark:text-violet-200">
+                                                <ClockIcon className="w-3 h-3 mt-0.5 flex-shrink-0"/>
+                                                <span className="flex-grow truncate">
+                                                    {appointment.text}
+                                                </span>
+                                                <button onClick={() => onDeleteAppointment(appointment.id)} className="opacity-0 group-hover:opacity-100 hover:text-red-500 flex-shrink-0">
+                                                    <TrashIcon className="w-3 h-3"/>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )
-                    })}
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
             
@@ -123,24 +149,24 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Prossimi Appuntamenti</h2>
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                     {upcomingAppointments.length > 0 ? (
-                        upcomingAppointments.map(app => (
-                            <div key={app.id} className="flex items-center gap-4 p-3 bg-slate-100 dark:bg-slate-700/50 rounded-lg group">
-                                <div className="flex-shrink-0">
+                        upcomingAppointments.map(appointment => (
+                             <div key={appointment.id} className="flex items-center gap-4 p-3 bg-slate-100 dark:bg-slate-700/50 rounded-lg group">
+                                <div className="flex-shrink-0 text-center">
                                     <p className="font-bold text-slate-800 dark:text-slate-100">
-                                        {new Date(app.date).toLocaleDateString('it-IT', { day: '2-digit' })}
+                                        {new Date(appointment.date).toLocaleDateString('it-IT', { timeZone: 'UTC', day: '2-digit' })}
                                     </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        {new Date(app.date).toLocaleDateString('it-IT', { month: 'short' })}
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                                        {new Date(appointment.date).toLocaleDateString('it-IT', { timeZone: 'UTC', month: 'short' })}
                                     </p>
                                 </div>
                                 <div className="border-l-2 border-violet-500 pl-4 flex-grow">
-                                    <p className="font-semibold text-slate-800 dark:text-slate-200">{app.text}</p>
+                                    <p className="font-semibold text-slate-800 dark:text-slate-200">{appointment.text}</p>
                                     <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
                                         <ClockIcon className="w-4 h-4" />
-                                        <span>{app.time.substring(0, 5)}</span>
+                                        <span>{appointment.time.substring(0, 5)}</span>
                                     </div>
                                 </div>
-                                <button onClick={() => onDeleteAppointment(app.id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => onDeleteAppointment(appointment.id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <TrashIcon />
                                 </button>
                             </div>

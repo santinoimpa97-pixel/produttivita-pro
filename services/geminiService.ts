@@ -11,6 +11,52 @@ const ai = new GoogleGenAI({ apiKey });
 
 
 /**
+ * Generates a motivational quote using the Gemini API.
+ * @returns A promise that resolves to a motivational quote string.
+ */
+export const generateMotivationalQuote = async (): Promise<string> => {
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: "Genera una frase motivazionale concisa e potente, adatta per un'app di produttività. La frase deve essere in italiano. Fornisci la risposta in formato JSON con una singola chiave 'quote'.",
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        quote: {
+                            type: Type.STRING,
+                            description: 'La frase motivazionale generata.'
+                        }
+                    },
+                    required: ['quote']
+                },
+            },
+        });
+
+        const jsonStr = response.text.trim();
+        if (!jsonStr) {
+            console.warn("Gemini returned an empty response for quote.");
+            return "Inizia la tua giornata con un obiettivo.";
+        }
+        
+        const result: { quote: string } = JSON.parse(jsonStr);
+
+        if (result && typeof result.quote === 'string' && result.quote.trim() !== '') {
+            return result.quote;
+        }
+
+        console.warn("Parsed Gemini response for quote is not in the expected format.", result);
+        return "La disciplina è il ponte tra gli obiettivi e la realizzazione.";
+
+    } catch (error) {
+        console.error("Errore durante la generazione della frase motivazionale con Gemini:", error);
+        return "Sii la versione migliore di te stesso.";
+    }
+};
+
+
+/**
  * Generates a list of subtasks for a given main task using the Gemini API.
  * @param taskText The text of the main task.
  * @returns A promise that resolves to an array of subtask strings.
