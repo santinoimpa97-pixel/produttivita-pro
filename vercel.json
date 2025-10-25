@@ -6,11 +6,5 @@
         { "key": "Content-Type", "value": "text/babel; charset=utf-8" }
       ]
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/:path((?!.*\\..*).*)",
-      "destination": "/index.html"
-    }
   ]
 }
