@@ -1,20 +1,30 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
+// --- ATTENZIONE: CONFIGURAZIONE RICHIESTA PER VERCEL ---
+// Per far funzionare le funzionalità di intelligenza artificiale su Vercel,
+// devi inserire qui la tua chiave API di Google Gemini.
+// Sostituisci il valore segnaposto con la tua chiave.
+const GEMINI_API_KEY = 'AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ';
+
+let aiClient: GoogleGenAI | null = null;
+
 /**
- * Initializes the GoogleGenAI client using the API key from the environment.
- * This function is called before each API request.
+ * Initializes the GoogleGenAI client using the API key from the constant.
+ * This function is called before each API request and caches the client.
  * @returns An instance of GoogleGenAI or null if the API key is missing.
  */
 const getAiClient = () => {
-    // The API key is expected to be available in the execution environment
-    // as process.env.API_KEY.
-    const apiKey = process.env.API_KEY;
+    if (aiClient) {
+        return aiClient;
+    }
 
-    if (!apiKey) {
-        console.error("La chiave API di Gemini non è disponibile nell'ambiente. Le funzionalità AI non saranno disponibili.");
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ') {
+        console.warn("La chiave API di Gemini non è configurata. Le funzionalità AI non saranno disponibili. Aggiungi la tua chiave nel file `services/geminiService.ts`.");
         return null;
     }
-    return new GoogleGenAI({ apiKey: apiKey });
+
+    aiClient = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    return aiClient;
 };
 
 
