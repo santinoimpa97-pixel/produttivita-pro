@@ -23,49 +23,25 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const today = new Date();
-  today.setHours(23, 59, 59, 999); // End of today
-
+  today.setHours(23, 59, 59, 999);
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  yesterday.setHours(23, 59, 59, 999); // End of yesterday
+  yesterday.setHours(23, 59, 59, 999);
 
-  const searchedTasks = tasks.filter(task => 
-    task.text.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const searchedTasks = tasks.filter(task => task.text.toLowerCase().includes(searchTerm.toLowerCase()));
   
-  const overdueTasks = searchedTasks.filter(
-    (task) => !task.completed && task.dueDate && new Date(task.dueDate) <= yesterday
-  );
-
-  const todayTasks = searchedTasks.filter(
-    (task) => !task.completed && task.dueDate && new Date(task.dueDate) > yesterday && new Date(task.dueDate) <= today
-  );
-
-  const upcomingTasks = searchedTasks.filter(
-    (task) => !task.completed && task.dueDate && new Date(task.dueDate) > today
-  );
-
-  const noDueDateTasks = searchedTasks.filter(
-    (task) => !task.completed && !task.dueDate
-  );
-  
-  const completedTasks = searchedTasks.filter((task) => task.completed);
-
+  const overdueTasks = searchedTasks.filter(t => !t.completed && t.dueDate && new Date(t.dueDate) <= yesterday);
+  const todayTasks = searchedTasks.filter(t => !t.completed && t.dueDate && new Date(t.dueDate) > yesterday && new Date(t.dueDate) <= today);
+  const upcomingTasks = searchedTasks.filter(t => !t.completed && t.dueDate && new Date(t.dueDate) > today);
+  const noDueDateTasks = searchedTasks.filter(t => !t.completed && !t.dueDate);
+  const completedTasks = searchedTasks.filter(t => t.completed);
 
   return (
     <div className="space-y-6 animate-fade-in">
       <TaskInput onAddTask={onAddTask} />
-
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
-        <input
-            type="text"
-            placeholder="Cerca in tutte le attività..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 mb-4"
-        />
+        <input type="text" placeholder="Cerca in tutte le attività..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-violet-500" />
       </div>
-
       <div className="space-y-4">
         <TaskCategory title="In Scadenza" tasks={overdueTasks} {...taskListProps} defaultOpen={true} />
         <TaskCategory title="Oggi" tasks={todayTasks} {...taskListProps} defaultOpen={true} />
@@ -73,12 +49,9 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
         <TaskCategory title="Senza Scadenza" tasks={noDueDateTasks} {...taskListProps} />
         <TaskCategory title="Completate" tasks={completedTasks} {...taskListProps} />
       </div>
-
       {tasks.length === 0 && (
         <div className="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-xl shadow-md">
-            <p className="text-slate-500 dark:text-slate-400 mb-2">
-              Nessuna attività ancora. Aggiungine una per iniziare!
-            </p>
+            <p className="text-slate-500 dark:text-slate-400">Nessuna attività ancora. Aggiungine una per iniziare!</p>
         </div>
       )}
     </div>

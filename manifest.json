@@ -2,7 +2,6 @@
   "short_name": "Produttività",
   "name": "Produttività Pro",
   "description": "Una suite completa per la produttività. Gestisci attività, routine, obiettivi e appuntamenti con l'aiuto dell'IA.",
-  "icons": [],
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#0f172a",

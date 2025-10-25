@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AnalyticsIcon } from './icons/AnalyticsIcon';
 import { CalendarIcon } from './icons/CalendarIcon';
@@ -13,21 +12,12 @@ interface BottomNavProps {
   onSetView: (view: View) => void;
 }
 
-const NavItem: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}> = ({ icon, label, isActive, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex flex-col items-center justify-center w-full pt-2 pb-1 transition-colors duration-200 ${
-      isActive ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-slate-400 hover:text-violet-500 dark:hover:text-violet-400'
-    }`}
-  >
-    {icon}
-    <span className="text-xs mt-1">{label}</span>
-  </button>
+const NavItem: React.FC<{ icon: React.ReactNode; label: string; isActive: boolean; onClick: () => void; }> = 
+  ({ icon, label, isActive, onClick }) => (
+    <button onClick={onClick} className={`flex flex-col items-center justify-center w-full pt-2 pb-1 transition-colors duration-200 ${isActive ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-slate-400 hover:text-violet-500'}`}>
+        {icon}
+        <span className="text-xs mt-1">{label}</span>
+    </button>
 );
 
 const BottomNav: React.FC<BottomNavProps> = ({ currentView, onSetView }) => {
@@ -40,8 +30,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onSetView }) => {
   ];
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 shadow-[0_-2px_5px_rgba(0,0,0,0.1)] z-20">
-      <div className="flex items-center justify-around">
+    <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-[0_-2px_5px_rgba(0,0,0,0.1)] z-20">
+      <div className="flex items-center justify-around max-w-4xl mx-auto">
         {navItems.map(item => (
           <NavItem
             key={item.view}

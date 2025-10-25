@@ -18,7 +18,6 @@
     }
     </script>
     
-    <!-- Meta tag per PWA e icone su iOS -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
@@ -27,41 +26,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class', // Abilita la dark mode basata su una classe sull'elemento HTML
+            darkMode: 'class',
         }
     </script>
     <style>
-        /* Stili per i selettori di data/ora per garantire la visibilità in entrambi i temi */
-        input[type="date"], input[type="time"] {
-            color-scheme: light;
-        }
-        html.dark input[type="date"], html.dark input[type="time"] {
-            color-scheme: dark;
-        }
-        /* Aggiunge una transizione fluida per i cambi di colore */
-        body {
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        /* Stile per le scrollbar per coerenza con il tema scuro */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        html.dark ::-webkit-scrollbar-track {
-            background: #1e293b;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #a8a29e;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #78716c;
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
+        input[type="date"], input[type="time"] { color-scheme: light; }
+        html.dark input[type="date"], html.dark input[type="time"] { color-scheme: dark; }
+        body { transition: background-color 0.3s ease, color 0.3s ease; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        html.dark ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #a8a29e; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #78716c; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
