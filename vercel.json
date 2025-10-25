@@ -1,13 +1,6 @@
 {
-  "headers": [
-    {
-      "source": "/(.*\\.tsx)",
-      "headers": [
-        { "key": "Content-Type", "value": "application/javascript" }
-      ]
-    }
-  ],
   "rewrites": [
+    { "source": "/index.js", "destination": "/index.tsx" },
     {
       "source": "/:path((?!.*\\..*).*)",
       "destination": "/index.html"
