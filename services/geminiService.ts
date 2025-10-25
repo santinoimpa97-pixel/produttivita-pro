@@ -1,14 +1,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { motivationalQuotes } from '../data/quotes';
 
-// --- CONFIGURAZIONE MANUALE OBBLIGATORIA ---
-// Sostituisci il valore segnaposto qui sotto con la tua chiave API reale presa da Google AI Studio.
-const apiKey = 'AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ';
+// INIZIA LA CONFIGURAZIONE
+// Per lo sviluppo locale, inserisci qui la tua chiave API di Gemini.
+// Per il deployment (es. Vercel), l'app userà automaticamente la variabile d'ambiente.
+const API_KEY_PLACEHOLDER = "INSERISCI_QUI_LA_TUA_CHIAVE_API_GEMINI";
+// FINE CONFIGURAZIONE
+
+// La chiave API di Gemini viene fornita prima dalla variabile d'ambiente,
+// poi dal placeholder sopra, per flessibilità tra development e production.
+const apiKey = process.env.API_KEY || API_KEY_PLACEHOLDER;
 
 export let GEMINI_CONFIG_ERROR = false;
-if (apiKey.startsWith('INSERISCI_QUI')) {
+if (apiKey.startsWith("INSERISCI_QUI")) {
     GEMINI_CONFIG_ERROR = true;
-    console.error("CONFIGURAZIONE GEMINI MANCANTE: Inserisci la tua chiave API nel file 'services/geminiService.ts'.");
+    console.error("CONFIGURAZIONE GEMINI MANCANTE: Inserisci la tua API_KEY in services/geminiService.ts o imposta la variabile d'ambiente API_KEY.");
 }
 
 const ai = GEMINI_CONFIG_ERROR ? null! : new GoogleGenAI({ apiKey });
