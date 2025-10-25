@@ -5,8 +5,9 @@ import { CalendarIcon } from './icons/CalendarIcon';
 import { ChecklistIcon } from './icons/ChecklistIcon';
 import { RoutineIcon } from './icons/RoutineIcon';
 import { GoalIcon } from './icons/GoalIcon';
+import { TimerIcon } from './icons/TimerIcon'; // Import TimerIcon
 
-export type View = 'tasks' | 'routines' | 'goals' | 'calendar' | 'analytics' | 'profile';
+export type View = 'tasks' | 'routines' | 'goals' | 'calendar' | 'analytics' | 'profile' | 'pomodoro';
 
 interface BottomNavProps {
   currentView: View;
@@ -34,6 +35,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onSetView }) => {
   const navItems: { view: View; label: string; icon: React.ReactNode }[] = [
     { view: 'tasks', label: 'Attività', icon: <ChecklistIcon /> },
     { view: 'routines', label: 'Routine', icon: <RoutineIcon /> },
+    { view: 'pomodoro', label: 'Pomodoro', icon: <TimerIcon /> },
     { view: 'goals', label: 'Obiettivi', icon: <GoalIcon /> },
     { view: 'calendar', label: 'Calendario', icon: <CalendarIcon /> },
     { view: 'analytics', label: 'Analytics', icon: <AnalyticsIcon /> },

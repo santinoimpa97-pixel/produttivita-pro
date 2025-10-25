@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 import {
@@ -21,6 +22,7 @@ import CalendarView from './components/CalendarView';
 import AnalyticsView from './components/AnalyticsView';
 import UserProfileView from './components/UserProfileView';
 import BottomNav, { View } from './components/BottomNav';
+import PomodoroView from './components/PomodoroView'; // Import PomodoroView
 import { supabase } from './supabaseClient';
 import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote } from './services/geminiService';
 
@@ -583,6 +585,8 @@ function App() {
             />;
         case 'analytics':
             return <AnalyticsView tasks={tasks} />;
+        case 'pomodoro':
+            return <PomodoroView />;
         case 'profile':
             return user ? <UserProfileView user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : null;
         default:

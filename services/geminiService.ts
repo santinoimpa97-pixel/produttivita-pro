@@ -1,12 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { motivationalQuotes } from '../data/quotes';
 
-// --- CONFIGURAZIONE PER L'AMBIENTE DI SVILUPPO (AI Studio) ---
-// La chiave API è inserita direttamente per far funzionare l'app qui.
-const apiKey = 'AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ';
+// --- CONFIGURAZIONE PER DEPLOYMENT (Vercel) ---
+// La chiave API viene letta dalla variabile d'ambiente 'API_KEY'.
+// Assicurati di aver impostato API_KEY nelle impostazioni del tuo progetto su Vercel.
+const apiKey = process.env.API_KEY;
 
 if (!apiKey) {
-    throw new Error("La chiave API di Gemini è mancante.");
+    throw new Error("La chiave API di Gemini (API_KEY) è mancante.");
 }
 const ai = new GoogleGenAI({ apiKey });
 
