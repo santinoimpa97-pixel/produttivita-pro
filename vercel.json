@@ -1,16 +1,18 @@
 {
   "headers": [
     {
-      "source": "/index.js",
+      "source": "/(.*\\.tsx)",
       "headers": [
-        { "key": "Content-Type", "value": "text/babel" }
+        {
+          "key": "Content-Type",
+          "value": "text/babel; charset=utf-8"
+        }
       ]
     }
   ],
   "rewrites": [
-    { "source": "/index.js", "destination": "/index.tsx" },
     {
-      "source": "/:path((?!.*\\.).*)",
+      "source": "/((?!api/|.*\\.).*)",
       "destination": "/index.html"
     }
   ]
