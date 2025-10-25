@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Goal } from '../types.js';
+import { Goal } from '../types.ts';
 
 interface GoalModalProps {
     isOpen: boolean;

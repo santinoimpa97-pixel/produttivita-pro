@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Routine, RoutineTemplate } from '../types.js';
-import { PlusIcon } from './icons/PlusIcon.js';
-import { TrashIcon } from './icons/TrashIcon.js';
-import { SparklesIcon } from './icons/SparklesIcon.js';
-import { ChevronDownIcon } from './icons/ChevronDownIcon.js';
-import { BookmarkIcon } from './icons/BookmarkIcon.js';
+import { Routine, RoutineTemplate } from '../types.ts';
+import { PlusIcon } from './icons/PlusIcon.tsx';
+import { TrashIcon } from './icons/TrashIcon.tsx';
+import { SparklesIcon } from './icons/SparklesIcon.tsx';
+import { ChevronDownIcon } from './icons/ChevronDownIcon.tsx';
+import { BookmarkIcon } from './icons/BookmarkIcon.tsx';
 
 interface RoutinesViewProps {
     routines: Routine[];

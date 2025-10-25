@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
-import { Task, SubTask, Priority, User, Routine, RoutineTask, RoutineTemplate, Appointment, Goal } from './types.js';
-import Header from './components/Header.js';
-import AuthenticationView from './components/AuthenticationView.js';
-import TasksView from './components/TasksView.js';
-import RoutinesView from './components/RoutinesView.js';
-import GoalsView from './components/GoalsView.js';
-import CalendarView from './components/CalendarView.js';
-import AnalyticsView from './components/AnalyticsView.js';
-import UserProfileView from './components/UserProfileView.js';
-import BottomNav, { View } from './components/BottomNav.js';
-import { supabase, SUPABASE_CONFIG_ERROR } from './supabaseClient.js';
-import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote, GEMINI_CONFIG_ERROR } from './services/geminiService.js';
-import ConfigurationRequiredView from './components/ConfigurationRequiredView.js';
+import { Task, SubTask, Priority, User, Routine, RoutineTask, RoutineTemplate, Appointment, Goal } from './types.ts';
+import Header from './components/Header.tsx';
+import AuthenticationView from './components/AuthenticationView.tsx';
+import TasksView from './components/TasksView.tsx';
+import RoutinesView from './components/RoutinesView.tsx';
+import GoalsView from './components/GoalsView.tsx';
+import CalendarView from './components/CalendarView.tsx';
+import AnalyticsView from './components/AnalyticsView.tsx';
+import UserProfileView from './components/UserProfileView.tsx';
+import BottomNav, { View } from './components/BottomNav.tsx';
+import { supabase, SUPABASE_CONFIG_ERROR } from './supabaseClient.ts';
+import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote, GEMINI_CONFIG_ERROR } from './services/geminiService.ts';
+import ConfigurationRequiredView from './components/ConfigurationRequiredView.tsx';
 
 function App() {
   if (SUPABASE_CONFIG_ERROR || GEMINI_CONFIG_ERROR) {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Priority } from '../types.js';
-import { PlusIcon } from './icons/PlusIcon.js';
+import { Priority } from '../types.ts';
+import { PlusIcon } from './icons/PlusIcon.tsx';
 
 interface TaskInputProps {
   onAddTask: (text: string, priority: Priority, dueDate: string | null) => void;

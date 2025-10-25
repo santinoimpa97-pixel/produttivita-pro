@@ -1,5 +1,5 @@
 import React from 'react';
-import { Task } from '../types.js';
+import { Task } from '../types.ts';
 
 interface LinkTasksModalProps {
     isOpen: boolean;

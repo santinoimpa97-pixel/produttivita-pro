@@ -1,7 +1,7 @@
 import React from 'react';
-import UserMenu from './UserMenu.js';
-import { User } from '../types.js';
-import { View } from './BottomNav.js';
+import UserMenu from './UserMenu.tsx';
+import { User } from '../types.ts';
+import { View } from './BottomNav.tsx';
 
 interface HeaderProps {
     user: User | null;

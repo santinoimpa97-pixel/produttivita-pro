@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Appointment } from '../types.js';
-import { PlusIcon } from './icons/PlusIcon.js';
-import { TrashIcon } from './icons/TrashIcon.js';
-import { ClockIcon } from './icons/ClockIcon.js';
+import { Appointment } from '../types.ts';
+import { PlusIcon } from './icons/PlusIcon.tsx';
+import { TrashIcon } from './icons/TrashIcon.tsx';
+import { ClockIcon } from './icons/ClockIcon.tsx';
 
 interface CalendarViewProps {
     appointments: Appointment[];

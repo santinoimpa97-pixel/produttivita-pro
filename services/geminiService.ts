@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { motivationalQuotes } from '../data/quotes.js';
+import { motivationalQuotes } from '../data/quotes.ts';
 
 // INIZIA LA CONFIGURAZIONE
 // Per lo sviluppo locale, inserisci qui la tua chiave API di Gemini.
