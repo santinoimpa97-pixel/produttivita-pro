@@ -1,11 +1,11 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// --- CONFIGURAZIONE PER L'AMBIENTE DI SVILUPPO (AI Studio) ---
-// La chiave API è inserita direttamente per far funzionare l'app qui.
-const apiKey = 'AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ';
+// According to the guidelines, the API key must be sourced from `process.env.API_KEY`.
+// It is assumed to be available in the execution environment.
+const apiKey = process.env.API_KEY;
 
 if (!apiKey) {
-    throw new Error("La chiave API di Gemini è mancante.");
+    throw new Error("La chiave API di Gemini è mancante. Assicurati che la variabile d'ambiente API_KEY sia impostata.");
 }
 const ai = new GoogleGenAI({ apiKey });
 

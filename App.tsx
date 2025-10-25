@@ -112,6 +112,9 @@ function App() {
         const tasksWithSubTasks = tasksData.map(task => ({
             ...task,
             dueDate: task.due_date,
+            // FIX: Map Supabase timestamps to Task properties.
+            createdAt: task.created_at,
+            completedAt: task.completed_at,
             subTasks: subTasksData.filter(sub => sub.task_id === task.id)
         }));
         setTasks(tasksWithSubTasks);
@@ -158,7 +161,8 @@ function App() {
   // Task Handlers
   const handleAddTask = async (text: string, priority: Priority, dueDate: string | null) => {
     if (!user) return;
-    const newTask: Task = { id: newId(), text, priority, dueDate, completed: false, subTasks: [] };
+    // FIX: Initialize new tasks with createdAt and completedAt for analytics.
+    const newTask: Task = { id: newId(), text, priority, dueDate, completed: false, subTasks: [], createdAt: new Date().toISOString(), completedAt: null };
     setTasks(prev => [newTask, ...prev]);
     const { error } = await supabase.from('tasks').insert({ id: newTask.id, user_id: user.id, text, priority, due_date: dueDate, completed: false });
     if (error) {
@@ -171,11 +175,14 @@ function App() {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
     const newStatus = !task.completed;
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: newStatus } : t));
-    const { error } = await supabase.from('tasks').update({ completed: newStatus }).eq('id', id);
+    // FIX: Set or clear completedAt timestamp when toggling task status.
+    const newCompletedAt = newStatus ? new Date().toISOString() : null;
+    setTasks(tasks.map(t => t.id === id ? { ...t, completed: newStatus, completedAt: newCompletedAt } : t));
+    const { error } = await supabase.from('tasks').update({ completed: newStatus, completed_at: newCompletedAt }).eq('id', id);
     if (error) {
         console.error(error);
-        setTasks(tasks.map(t => t.id === id ? { ...t, completed: !newStatus } : t));
+        // FIX: Revert completedAt state on error as well.
+        setTasks(tasks.map(t => t.id === id ? { ...t, completed: !newStatus, completedAt: task.completedAt } : t));
     }
   };
 
@@ -615,7 +622,7 @@ function App() {
   }
 
   return (
-    <div className="bg-slate-100 dark:bg-[#020617] min-h-screen font-sans pb-24 md:pb-4">
+    <div className="bg-slate-100 dark:bg-[#020617] min-h-screen font-sans">
       <Header 
         user={user} 
         onLogout={handleLogout} 
@@ -624,7 +631,7 @@ function App() {
         onSetView={setView} 
         subtitle={subtitle} 
       />
-      <main className="max-w-4xl mx-auto p-4">
+      <main className="max-w-4xl mx-auto p-4 pb-24">
         {renderMainContent()}
       </main>
       <BottomNav currentView={view} onSetView={setView} />
