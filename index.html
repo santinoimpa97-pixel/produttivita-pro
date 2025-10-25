@@ -1,3 +1,14 @@
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.76.1"
+  }
+}
+</script>
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -6,9 +17,10 @@
     <title>Produttività Pro</title>
     
     <!-- Meta tag per PWA e icone su iOS -->
-    <link rel="manifest" href="./manifest.json">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-512x512.png">
     <meta name="theme-color" content="#0f172a">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -54,21 +66,9 @@
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0",
-        "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.76.1"
-      }
-    }
-    </script>
 </head>
-<body class="bg-slate-100 dark:bg-[#020617]">
+<body>
     <div id="root"></div>
-    <script type="text/babel" data-presets="react,typescript" data-type="module" src="./index.tsx"></script>
+    <script type="text/babel" data-type="module" src="./index.tsx"></script>
 </body>
 </html>

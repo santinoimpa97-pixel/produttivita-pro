@@ -1,10 +1,8 @@
 {
-  "headers": [
+  "rewrites": [
     {
-      "source": "/(.*\\.tsx)",
-      "headers": [
-        { "key": "Content-Type", "value": "text/babel; charset=utf-8" }
-      ]
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
