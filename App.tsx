@@ -13,13 +13,13 @@ import {
   Goal,
 } from './types';
 import Header from './components/Header';
-import AuthView from './components/AuthView';
+import AuthenticationView from './components/AuthenticationView';
 import TasksView from './components/TasksView';
 import RoutinesView from './components/RoutinesView';
 import GoalsView from './components/GoalsView';
 import CalendarView from './components/CalendarView';
 import AnalyticsView from './components/AnalyticsView';
-import ProfileView from './components/ProfileView';
+import UserProfileView from './components/UserProfileView';
 import BottomNav, { View } from './components/BottomNav';
 import { supabase } from './supabaseClient';
 import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote } from './services/geminiService';
@@ -584,7 +584,7 @@ function App() {
         case 'analytics':
             return <AnalyticsView tasks={tasks} />;
         case 'profile':
-            return user ? <ProfileView user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : null;
+            return user ? <UserProfileView user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : null;
         default:
             return <h2>View not found</h2>;
     }
@@ -619,7 +619,7 @@ function App() {
   }
 
   if (!session || !user) {
-    return <AuthView />;
+    return <AuthenticationView />;
   }
 
   return (

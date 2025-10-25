@@ -1,20 +1,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 /**
- * Retrieves the API key and initializes the GoogleGenAI client.
- * This function is called before each API request to ensure the app
- * doesn't crash on startup if the environment variable is not set.
+ * Initializes the GoogleGenAI client using the API key from the environment.
+ * This function is called before each API request.
  * @returns An instance of GoogleGenAI or null if the API key is missing.
  */
 const getAiClient = () => {
-    // Safely access the API key in a browser environment.
-    const apiKey = typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined;
+    // The API key is expected to be available in the execution environment
+    // as process.env.API_KEY.
+    const apiKey = process.env.API_KEY;
 
     if (!apiKey) {
-        console.error("La chiave API di Gemini è mancante. Assicurati che la variabile d'ambiente API_KEY sia impostata nel tuo ambiente di deployment (es. Vercel).");
+        console.error("La chiave API di Gemini non è disponibile nell'ambiente. Le funzionalità AI non saranno disponibili.");
         return null;
     }
-    return new GoogleGenAI({ apiKey });
+    return new GoogleGenAI({ apiKey: apiKey });
 };
 
 
