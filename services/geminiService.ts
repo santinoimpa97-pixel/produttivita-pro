@@ -1,13 +1,21 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// According to the guidelines, the API key must be sourced from `process.env.API_KEY`.
-// It is assumed to be available in the execution environment.
-const apiKey = process.env.API_KEY;
+/**
+ * Retrieves the API key and initializes the GoogleGenAI client.
+ * This function is called before each API request to ensure the app
+ * doesn't crash on startup if the environment variable is not set.
+ * @returns An instance of GoogleGenAI or null if the API key is missing.
+ */
+const getAiClient = () => {
+    // Safely access the API key in a browser environment.
+    const apiKey = typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined;
 
-if (!apiKey) {
-    throw new Error("La chiave API di Gemini è mancante. Assicurati che la variabile d'ambiente API_KEY sia impostata.");
-}
-const ai = new GoogleGenAI({ apiKey });
+    if (!apiKey) {
+        console.error("La chiave API di Gemini è mancante. Assicurati che la variabile d'ambiente API_KEY sia impostata nel tuo ambiente di deployment (es. Vercel).");
+        return null;
+    }
+    return new GoogleGenAI({ apiKey });
+};
 
 
 /**
@@ -15,6 +23,11 @@ const ai = new GoogleGenAI({ apiKey });
  * @returns A promise that resolves to a motivational quote string.
  */
 export const generateMotivationalQuote = async (): Promise<string> => {
+    const ai = getAiClient();
+    if (!ai) {
+        return "Sii la versione migliore di te stesso.";
+    }
+
     try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -62,6 +75,11 @@ export const generateMotivationalQuote = async (): Promise<string> => {
  * @returns A promise that resolves to an array of subtask strings.
  */
 export const generateSubtasksFromGemini = async (taskText: string): Promise<string[]> => {
+  const ai = getAiClient();
+  if (!ai) {
+    return [];
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash", 
@@ -113,6 +131,11 @@ export const generateSubtasksFromGemini = async (taskText: string): Promise<stri
  * @returns A promise that resolves to an array of task strings.
  */
 export const generateRoutineTasks = async (routineName: string): Promise<string[]> => {
+  const ai = getAiClient();
+  if (!ai) {
+    return [];
+  }
+  
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
