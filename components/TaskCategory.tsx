@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Task } from '../types';
-import TaskList from './TaskList';
-import { ChevronDownIcon } from './icons/ChevronDownIcon';
-import type { TaskListProps } from './TaskList';
+import { Task } from '../types.js';
+import TaskList from './TaskList.js';
+import { ChevronDownIcon } from './icons/ChevronDownIcon.js';
+import type { TaskListProps } from './TaskList.js';
 
 type TaskCategoryProps = Omit<TaskListProps, 'tasks'> & {
     title: string;

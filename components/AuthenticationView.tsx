@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
-import { UserIcon } from './icons/UserIcon';
-import { KeyIcon } from './icons/KeyIcon';
+import { supabase } from '../supabaseClient.js';
+import { UserIcon } from './icons/UserIcon.js';
+import { KeyIcon } from './icons/KeyIcon.js';
 
 type AuthMode = 'login' | 'register' | 'forgotPassword';
 

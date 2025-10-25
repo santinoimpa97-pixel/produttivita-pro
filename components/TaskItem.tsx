@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Task, Priority } from '../types';
-import SubTaskItem from './SubTaskItem';
-import { TrashIcon } from './icons/TrashIcon';
-import { PencilIcon } from './icons/PencilIcon';
-import { SparklesIcon } from './icons/SparklesIcon';
-import { ChevronDownIcon } from './icons/ChevronDownIcon';
-import { PlusIcon } from './icons/PlusIcon';
+import { Task, Priority } from '../types.js';
+import SubTaskItem from './SubTaskItem.js';
+import { TrashIcon } from './icons/TrashIcon.js';
+import { PencilIcon } from './icons/PencilIcon.js';
+import { SparklesIcon } from './icons/SparklesIcon.js';
+import { ChevronDownIcon } from './icons/ChevronDownIcon.js';
+import { PlusIcon } from './icons/PlusIcon.js';
 
 interface TaskItemProps {
   task: Task;

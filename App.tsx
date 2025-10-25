@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
-import { Task, SubTask, Priority, User, Routine, RoutineTask, RoutineTemplate, Appointment, Goal } from './types';
-import Header from './components/Header';
-import AuthenticationView from './components/AuthenticationView';
-import TasksView from './components/TasksView';
-import RoutinesView from './components/RoutinesView';
-import GoalsView from './components/GoalsView';
-import CalendarView from './components/CalendarView';
-import AnalyticsView from './components/AnalyticsView';
-import UserProfileView from './components/UserProfileView';
-import BottomNav, { View } from './components/BottomNav';
-import { supabase, SUPABASE_CONFIG_ERROR } from './supabaseClient';
-import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote, GEMINI_CONFIG_ERROR } from './services/geminiService';
-import ConfigurationRequiredView from './components/ConfigurationRequiredView';
+import { Task, SubTask, Priority, User, Routine, RoutineTask, RoutineTemplate, Appointment, Goal } from './types.js';
+import Header from './components/Header.js';
+import AuthenticationView from './components/AuthenticationView.js';
+import TasksView from './components/TasksView.js';
+import RoutinesView from './components/RoutinesView.js';
+import GoalsView from './components/GoalsView.js';
+import CalendarView from './components/CalendarView.js';
+import AnalyticsView from './components/AnalyticsView.js';
+import UserProfileView from './components/UserProfileView.js';
+import BottomNav, { View } from './components/BottomNav.js';
+import { supabase, SUPABASE_CONFIG_ERROR } from './supabaseClient.js';
+import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote, GEMINI_CONFIG_ERROR } from './services/geminiService.js';
+import ConfigurationRequiredView from './components/ConfigurationRequiredView.js';
 
 function App() {
   if (SUPABASE_CONFIG_ERROR || GEMINI_CONFIG_ERROR) {

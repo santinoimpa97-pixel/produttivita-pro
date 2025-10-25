@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SubTask } from '../types';
-import { TrashIcon } from './icons/TrashIcon';
-import { PencilIcon } from './icons/PencilIcon';
+import { SubTask } from '../types.js';
+import { TrashIcon } from './icons/TrashIcon.js';
+import { PencilIcon } from './icons/PencilIcon.js';
 
 interface SubTaskItemProps {
   subTask: SubTask;

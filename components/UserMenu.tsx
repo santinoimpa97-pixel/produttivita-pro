@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User } from '../types';
-import { UserIcon } from './icons/UserIcon';
-import { LogoutIcon } from './icons/LogoutIcon';
-import { ProfileSettingsIcon } from './icons/ProfileSettingsIcon';
-import { View } from './BottomNav';
-import { SunIcon } from './icons/SunIcon';
-import { MoonIcon } from './icons/MoonIcon';
+import { User } from '../types.js';
+import { UserIcon } from './icons/UserIcon.js';
+import { LogoutIcon } from './icons/LogoutIcon.js';
+import { ProfileSettingsIcon } from './icons/ProfileSettingsIcon.js';
+import { View } from './BottomNav.js';
+import { SunIcon } from './icons/SunIcon.js';
+import { MoonIcon } from './icons/MoonIcon.js';
 
 interface UserMenuProps {
     user: User;

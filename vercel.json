@@ -1,13 +1,9 @@
 {
-  "headers": [
-    {
-      "source": "/index.tsx",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/babel; charset=utf-8"
-        }
-      ]
-    }
+  "rewrites": [
+    { "source": "/types.js", "destination": "/types.ts" },
+    { "source": "/supabaseClient.js", "destination": "/supabaseClient.ts" },
+    { "source": "/services/geminiService.js", "destination": "/services/geminiService.ts" },
+    { "source": "/data/quotes.js", "destination": "/data/quotes.ts" },
+    { "source": "/(.*).js", "destination": "/$1.tsx" }
   ]
 }

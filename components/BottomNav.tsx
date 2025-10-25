@@ -1,9 +1,9 @@
 import React from 'react';
-import { AnalyticsIcon } from './icons/AnalyticsIcon';
-import { CalendarIcon } from './icons/CalendarIcon';
-import { ChecklistIcon } from './icons/ChecklistIcon';
-import { RoutineIcon } from './icons/RoutineIcon';
-import { GoalIcon } from './icons/GoalIcon';
+import { AnalyticsIcon } from './icons/AnalyticsIcon.js';
+import { CalendarIcon } from './icons/CalendarIcon.js';
+import { ChecklistIcon } from './icons/ChecklistIcon.js';
+import { RoutineIcon } from './icons/RoutineIcon.js';
+import { GoalIcon } from './icons/GoalIcon.js';
 
 export type View = 'tasks' | 'routines' | 'goals' | 'calendar' | 'analytics' | 'profile';
 

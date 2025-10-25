@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Task, Priority } from '../types';
-import TaskInput from './TaskInput';
-import TaskList from './TaskList';
-import TaskCategory from './TaskCategory';
+import { Task, Priority } from '../types.js';
+import TaskInput from './TaskInput.js';
+import TaskList from './TaskList.js';
+import TaskCategory from './TaskCategory.js';
 
 interface TasksViewProps {
   tasks: Task[];

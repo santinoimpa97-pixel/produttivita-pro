@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Task, Priority } from '../types';
+import { Task, Priority } from '../types.js';
 
 type TimeFilter = '7d' | '30d' | 'all';
 

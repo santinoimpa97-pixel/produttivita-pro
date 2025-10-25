@@ -1,9 +1,9 @@
 import React from 'react';
-import { Goal, Task } from '../types';
-import { PlusIcon } from './icons/PlusIcon';
-import GoalItem from './GoalItem';
-import GoalModal from './GoalModal';
-import LinkTasksModal from './LinkTasksModal';
+import { Goal, Task } from '../types.js';
+import { PlusIcon } from './icons/PlusIcon.js';
+import GoalItem from './GoalItem.js';
+import GoalModal from './GoalModal.js';
+import LinkTasksModal from './LinkTasksModal.js';
 
 interface GoalsViewProps {
     goals: Goal[];

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
-import { User } from '../types';
-import { KeyIcon } from './icons/KeyIcon';
-import { UserIcon } from './icons/UserIcon';
-import { LogoutIcon } from './icons/LogoutIcon';
+import { supabase } from '../supabaseClient.js';
+import { User } from '../types.js';
+import { KeyIcon } from './icons/KeyIcon.js';
+import { UserIcon } from './icons/UserIcon.js';
+import { LogoutIcon } from './icons/LogoutIcon.js';
 
 interface UserProfileViewProps {
   user: User;

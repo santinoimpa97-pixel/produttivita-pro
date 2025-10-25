@@ -1,8 +1,8 @@
 import React from 'react';
-import { Goal, Task } from '../types';
-import { PencilIcon } from './icons/PencilIcon';
-import { TrashIcon } from './icons/TrashIcon';
-import { ChecklistIcon } from './icons/ChecklistIcon';
+import { Goal, Task } from '../types.js';
+import { PencilIcon } from './icons/PencilIcon.js';
+import { TrashIcon } from './icons/TrashIcon.js';
+import { ChecklistIcon } from './icons/ChecklistIcon.js';
 
 interface GoalItemProps {
     goal: Goal;
