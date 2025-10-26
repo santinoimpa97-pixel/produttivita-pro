@@ -8,10 +8,10 @@ export class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   ErrorBoundaryState
 > {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  // FIX: Replaced constructor with state class field initialization.
+  // This correctly defines the state for the component, resolving TypeScript errors
+  // where `this.state` and `this.props` were not being recognized.
+  state: ErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };

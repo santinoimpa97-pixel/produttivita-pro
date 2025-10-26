@@ -9,8 +9,8 @@ const SUPABASE_ANON_KEY_PLACEHOLDER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJp
 
 // Le chiavi API di Supabase vengono fornite prima dalle variabili d'ambiente,
 // poi dai placeholder sopra, per flessibilità tra development e production.
-const supabaseUrl = process.env.SUPABASE_URL || SUPABASE_URL_PLACEHOLDER;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY_PLACEHOLDER;
+const supabaseUrl = (typeof process !== 'undefined' && process.env.SUPABASE_URL) || SUPABASE_URL_PLACEHOLDER;
+const supabaseAnonKey = (typeof process !== 'undefined' && process.env.SUPABASE_ANON_KEY) || SUPABASE_ANON_KEY_PLACEHOLDER;
 
 export let SUPABASE_CONFIG_ERROR = false;
 
