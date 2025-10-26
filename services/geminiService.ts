@@ -1,16 +1,26 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { motivationalQuotes } from '../data/quotes.ts';
 
-// FIX: Per Gemini API guidelines, the API key must be sourced directly and exclusively
-// from `process.env.API_KEY`. The placeholder and associated error checking logic have been removed,
-// assuming the environment variable is correctly configured.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// INIZIA LA CONFIGURAZIONE
+// Per lo sviluppo locale, inserisci qui la tua chiave API di Google.
+// Per il deployment (es. Vercel), l'app userà automaticamente la variabile d'ambiente API_KEY.
+const GEMINI_API_KEY_PLACEHOLDER = "INSERISCI_QUI_LA_TUA_CHIAVE_API_GOOGLE";
+// FINE CONFIGURAZIONE
 
-// FIX: The GEMINI_CONFIG_ERROR flag is no longer necessary as the API key is assumed to be available.
-// It is set to false to maintain compatibility with App.tsx which imports it.
-export const GEMINI_CONFIG_ERROR = false;
+// La chiave API di Gemini viene fornita prima dalla variabile d'ambiente,
+// poi dal placeholder sopra, per flessibilità tra development e production.
+const geminiApiKey = (typeof process !== 'undefined' && process.env.API_KEY) || GEMINI_API_KEY_PLACEHOLDER;
+
+export let GEMINI_CONFIG_ERROR = false;
+if (!geminiApiKey || geminiApiKey.startsWith("INSERISCI_QUI")) {
+    GEMINI_CONFIG_ERROR = true;
+    console.error("CONFIGURAZIONE GEMINI MANCANTE: Inserisci la tua chiave API in services/geminiService.ts o imposta la variabile d'ambiente API_KEY per il deployment.");
+}
+
+const ai = GEMINI_CONFIG_ERROR ? null! : new GoogleGenAI({ apiKey: geminiApiKey });
 
 export const generateSubtasksFromGemini = async (taskText: string): Promise<string[]> => {
+  if (GEMINI_CONFIG_ERROR) return [];
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash", 
@@ -33,6 +43,7 @@ export const generateSubtasksFromGemini = async (taskText: string): Promise<stri
 };
 
 export const generateRoutineTasks = async (routineName: string): Promise<string[]> => {
+  if (GEMINI_CONFIG_ERROR) return [];
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",

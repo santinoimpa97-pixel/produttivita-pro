@@ -1,16 +1,20 @@
 import React from 'react';
 
+// FIX: Defined separate interfaces for props and state to make the component's
+// contract more explicit and to resolve a TypeScript error where `this.props`
+// was not being recognized.
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
 interface ErrorBoundaryState {
   hasError: boolean;
 }
 
 export class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
+  ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  // FIX: Replaced constructor with state class field initialization.
-  // This correctly defines the state for the component, resolving TypeScript errors
-  // where `this.state` and `this.props` were not being recognized.
   state: ErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError(): ErrorBoundaryState {
