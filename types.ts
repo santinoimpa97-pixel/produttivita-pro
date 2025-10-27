@@ -17,8 +17,6 @@ export interface Task {
   dueDate: string | null;
   completed: boolean;
   subTasks: SubTask[];
-  createdAt: string;
-  completedAt: string | null;
 }
 
 export interface User {

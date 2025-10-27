@@ -1,7 +1,7 @@
 import React from 'react';
-import UserMenu from './UserMenu.tsx';
-import { User } from '../types.ts';
-import { View } from './BottomNav.tsx';
+import UserMenu from './UserMenu';
+import { User } from '../types';
+import { View } from './BottomNav';
 
 interface HeaderProps {
     user: User | null;
@@ -13,6 +13,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout, isDarkMode, toggleDarkMode, onSetView, subtitle }) => {
+    
     return (
         <header className="bg-white/70 dark:bg-[#020617] backdrop-blur-lg sticky top-0 z-10 p-4 shadow-sm">
             <div className="max-w-4xl mx-auto flex justify-between items-center">

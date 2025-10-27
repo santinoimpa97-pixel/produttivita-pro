@@ -1,7 +1,9 @@
-import React from 'react';
-import { Task } from '../types.ts';
-import TaskItem from './TaskItem.tsx';
 
+import React from 'react';
+import { Task } from '../types';
+import TaskItem from './TaskItem';
+
+// FIX: Export TaskListProps to be used in other components.
 export interface TaskListProps {
   tasks: Task[];
   onToggleTask: (id: string) => void;
@@ -15,28 +17,47 @@ export interface TaskListProps {
   generatingTaskId: string | null;
 }
 
-const TaskList: React.FC<TaskListProps> = (props) => {
-  if (props.tasks.length === 0) {
-    return <div className="text-center py-6"><p className="text-slate-500">Nessuna attività in questa categoria.</p></div>;
+const TaskList: React.FC<TaskListProps> = ({
+  tasks,
+  onToggleTask,
+  onDeleteTask,
+  onUpdateTask,
+  onAddSubTask,
+  onToggleSubTask,
+  onDeleteSubTask,
+  onUpdateSubTask,
+  onGenerateSubtasks,
+  generatingTaskId,
+}) => {
+  if (tasks.length === 0) {
+    return (
+      <div className="text-center py-6 px-4">
+        <p className="text-slate-500 dark:text-slate-400">
+          Nessuna attività corrisponde ai filtri correnti.
+        </p>
+      </div>
+    );
   }
+
   return (
     <div className="space-y-4">
-      {props.tasks.map((task) => (
+      {tasks.map((task) => (
         <TaskItem
           key={task.id}
           task={task}
-          onToggle={props.onToggleTask}
-          onDelete={props.onDeleteTask}
-          onUpdate={props.onUpdateTask}
-          onAddSubTask={props.onAddSubTask}
-          onToggleSubTask={props.onToggleSubTask}
-          onDeleteSubTask={props.onDeleteSubTask}
-          onUpdateSubTask={props.onUpdateSubTask}
-          onGenerateSubtasks={props.onGenerateSubtasks}
-          isGenerating={props.generatingTaskId === task.id}
+          onToggle={onToggleTask}
+          onDelete={onDeleteTask}
+          onUpdate={onUpdateTask}
+          onAddSubTask={onAddSubTask}
+          onToggleSubTask={onToggleSubTask}
+          onDeleteSubTask={onDeleteSubTask}
+          onUpdateSubTask={onUpdateSubTask}
+          onGenerateSubtasks={onGenerateSubtasks}
+          isGenerating={generatingTaskId === task.id}
         />
       ))}
     </div>
   );
 };
+
 export default TaskList;
