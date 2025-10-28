@@ -28,6 +28,7 @@ export interface User {
 export interface RoutineTask {
     id: string;
     text: string;
+    completed: boolean;
 }
 
 export interface Routine {

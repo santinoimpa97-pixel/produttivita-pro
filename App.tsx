@@ -129,7 +129,7 @@ function App() {
         setGoals(goalsRes.data?.map((g: any) => ({ ...g, targetDate: g.target_date, linkedTaskIds: g.linked_task_ids || [] })) || []);
 
     } catch (error: any) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching data:", error.message);
         setDataError("Impossibile caricare i dati. Controlla la tua connessione e riprova.");
     } finally {
         setDataLoading(false);
@@ -162,49 +162,52 @@ function App() {
     setTasks(prev => [newTask, ...prev]);
     const { error } = await supabase.from('tasks').insert({ id: newTask.id, user_id: user.id, text, priority, due_date: dueDate, completed: false });
     if (error) {
-      console.error(error);
+      console.error("Failed to add task:", error.message);
       setTasks(prev => prev.filter(t => t.id !== newTask.id));
     }
   };
 
   const handleToggleTask = async (id: string) => {
+    if (!user) return;
     const task = tasks.find(t => t.id === id);
     if (!task) return;
     const newStatus = !task.completed;
     setTasks(tasks.map(t => t.id === id ? { ...t, completed: newStatus } : t));
-    const { error } = await supabase.from('tasks').update({ completed: newStatus }).eq('id', id);
+    const { error } = await supabase.from('tasks').update({ completed: newStatus }).eq('user_id', user.id).eq('id', id);
     if (error) {
-        console.error(error);
+        console.error("Failed to toggle task:", error.message);
         setTasks(tasks.map(t => t.id === id ? { ...t, completed: !newStatus } : t));
     }
   };
 
   const handleDeleteTask = async (id: string) => {
+    if (!user) return;
     const oldTasks = tasks;
     setTasks(tasks.filter(t => t.id !== id));
     
     // First, delete associated subtasks
-    const { error: subtasksError } = await supabase.from('sub_tasks').delete().eq('task_id', id);
+    const { error: subtasksError } = await supabase.from('sub_tasks').delete().eq('user_id', user.id).eq('task_id', id);
     if (subtasksError) {
-        console.error("Error deleting subtasks:", subtasksError);
+        console.error("Error deleting subtasks:", subtasksError.message);
         setTasks(oldTasks); // Revert state
         return;
     }
     
     // Then, delete the task itself
-    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    const { error } = await supabase.from('tasks').delete().eq('user_id', user.id).eq('id', id);
     if (error) {
-        console.error(error);
+        console.error("Failed to delete task:", error.message);
         setTasks(oldTasks);
     }
   };
 
   const handleUpdateTask = async (id: string, newText: string) => {
+    if (!user) return;
     const oldTasks = tasks;
     setTasks(tasks.map(t => t.id === id ? { ...t, text: newText } : t));
-    const { error } = await supabase.from('tasks').update({ text: newText }).eq('id', id);
+    const { error } = await supabase.from('tasks').update({ text: newText }).eq('user_id', user.id).eq('id', id);
     if (error) {
-        console.error(error);
+        console.error("Failed to update task:", error.message);
         setTasks(oldTasks);
     }
   };
@@ -223,12 +226,13 @@ function App() {
 
     const { error } = await supabase.from('sub_tasks').insert(dbSubTask);
     if(error){
-        console.error("Failed to add subtask:", error);
+        console.error("Failed to add subtask:", error.message);
         setTasks(oldTasks);
     }
   };
 
   const handleToggleSubTask = async (taskId: string, subTaskId: string) => {
+    if (!user) return;
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
     const subTask = task.subTasks.find(st => st.id === subTaskId);
@@ -241,37 +245,39 @@ function App() {
         subTasks: t.subTasks.map(st => st.id === subTaskId ? { ...st, completed: newStatus } : st)
     } : t));
 
-    const { error } = await supabase.from('sub_tasks').update({ completed: newStatus }).eq('id', subTaskId);
+    const { error } = await supabase.from('sub_tasks').update({ completed: newStatus }).eq('user_id', user.id).eq('id', subTaskId);
     if (error) {
-        console.error("Failed to toggle subtask:", error);
+        console.error("Failed to toggle subtask:", error.message);
         setTasks(oldTasks);
     }
   };
 
   const handleDeleteSubTask = async (taskId: string, subTaskId: string) => {
+    if (!user) return;
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
     
     const oldTasks = tasks;
     setTasks(tasks.map(t => t.id === taskId ? {...t, subTasks: t.subTasks.filter(st => st.id !== subTaskId)} : t));
 
-    const { error } = await supabase.from('sub_tasks').delete().eq('id', subTaskId);
+    const { error } = await supabase.from('sub_tasks').delete().eq('user_id', user.id).eq('id', subTaskId);
     if(error){
-        console.error("Failed to delete subtask:", error);
+        console.error("Failed to delete subtask:", error.message);
         setTasks(oldTasks);
     }
   };
   
   const handleUpdateSubTask = async (taskId: string, subTaskId: string, newText: string) => {
+    if (!user) return;
     const oldTasks = tasks;
     setTasks(tasks.map(t => t.id === taskId ? {
         ...t,
         subTasks: t.subTasks.map(st => st.id === subTaskId ? { ...st, text: newText } : st)
     } : t));
 
-    const { error } = await supabase.from('sub_tasks').update({ text: newText }).eq('id', subTaskId);
+    const { error } = await supabase.from('sub_tasks').update({ text: newText }).eq('user_id', user.id).eq('id', subTaskId);
     if (error) {
-        console.error("Failed to update subtask:", error);
+        console.error("Failed to update subtask:", error.message);
         setTasks(oldTasks);
     }
   };
@@ -294,7 +300,7 @@ function App() {
         
         const { error } = await supabase.from('sub_tasks').insert(newDbSubtasks);
         if(error){
-            console.error("Failed to bulk insert generated subtasks:", error);
+            console.error("Failed to bulk insert generated subtasks:", error.message);
             setTasks(oldTasks);
         }
     } finally {
@@ -309,7 +315,7 @@ function App() {
     setRoutines(prev => [newRoutine, ...prev]);
     const { error } = await supabase.from('routines').insert({ id: newRoutine.id, user_id: user.id, name });
     if (error) {
-      console.error(error);
+      console.error("Failed to add routine:", error.message);
       setRoutines(prev => prev.filter(r => r.id !== newRoutine.id));
     }
   };
@@ -319,16 +325,16 @@ function App() {
     const oldRoutines = routines;
     setRoutines(routines.filter(r => r.id !== id));
     
-    const { error: tasksError } = await supabase.from('routine_tasks').delete().eq('routine_id', id);
+    const { error: tasksError } = await supabase.from('routine_tasks').delete().eq('user_id', user.id).eq('routine_id', id);
     if (tasksError) {
-        console.error("Error deleting routine tasks:", tasksError);
+        console.error("Error deleting routine tasks:", tasksError.message);
         setRoutines(oldRoutines);
         return;
     }
 
-    const { error: routineError } = await supabase.from('routines').delete().eq('id', id);
+    const { error: routineError } = await supabase.from('routines').delete().eq('user_id', user.id).eq('id', id);
     if (routineError) {
-        console.error("Error deleting routine:", routineError);
+        console.error("Error deleting routine:", routineError.message);
         setRoutines(oldRoutines);
     }
   };
@@ -338,7 +344,7 @@ function App() {
     const routine = routines.find(r => r.id === routineId);
     if (!routine) return;
 
-    const newTask: RoutineTask = { id: newId(), text: taskText };
+    const newTask: RoutineTask = { id: newId(), text: taskText, completed: false };
     const dbTask = { ...newTask, routine_id: routineId, user_id: user.id };
     
     const oldRoutines = routines;
@@ -346,21 +352,77 @@ function App() {
 
     const { error } = await supabase.from('routine_tasks').insert(dbTask);
     if(error){
-        console.error("Failed to add routine task:", error);
+        console.error("Failed to add routine task:", error.message);
         setRoutines(oldRoutines);
     }
   };
 
   const handleDeleteRoutineTask = async (routineId: string, taskId: string) => {
+    if (!user) return;
     const routine = routines.find(r => r.id === routineId);
     if (!routine) return;
     
     const oldRoutines = routines;
     setRoutines(routines.map(r => r.id === routineId ? {...r, tasks: r.tasks.filter(t => t.id !== taskId)} : r));
 
-    const { error } = await supabase.from('routine_tasks').delete().eq('id', taskId);
+    const { error } = await supabase
+        .from('routine_tasks')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('id', taskId);
+
     if(error){
-        console.error("Failed to delete routine task:", error);
+        console.error("Failed to delete routine task:", error.message);
+        setRoutines(oldRoutines);
+    }
+  };
+
+  const handleToggleRoutineTask = async (routineId: string, taskId: string) => {
+    if (!user) return;
+    const routine = routines.find(r => r.id === routineId);
+    if (!routine) return;
+    const task = routine.tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const newStatus = !task.completed;
+
+    const oldRoutines = routines;
+    setRoutines(routines.map(r => r.id === routineId ? {
+        ...r,
+        tasks: r.tasks.map(t => t.id === taskId ? { ...t, completed: newStatus } : t)
+    } : r));
+
+    const { error } = await supabase
+        .from('routine_tasks')
+        .update({ completed: newStatus })
+        .eq('user_id', user.id)
+        .eq('id', taskId);
+        
+    if (error) {
+        console.error("Failed to toggle routine task:", error.message);
+        setRoutines(oldRoutines);
+    }
+  };
+
+  const handleResetRoutineTasks = async (routineId: string) => {
+    if (!user) return;
+    const routine = routines.find(r => r.id === routineId);
+    if (!routine || !routine.tasks.some(t => t.completed)) return;
+
+    const oldRoutines = routines;
+    setRoutines(routines.map(r => r.id === routineId ? {
+        ...r,
+        tasks: r.tasks.map(t => ({ ...t, completed: false }))
+    } : r));
+
+    const taskIds = routine.tasks.map(t => t.id);
+    const { error } = await supabase
+        .from('routine_tasks')
+        .update({ completed: false })
+        .eq('user_id', user.id)
+        .in('id', taskIds);
+
+    if (error) {
+        console.error("Failed to reset routine tasks:", error.message);
         setRoutines(oldRoutines);
     }
   };
@@ -375,7 +437,7 @@ function App() {
         const taskTexts = await generateRoutineTasks(routineName);
         if (taskTexts.length === 0) return;
 
-        const newTasks: RoutineTask[] = taskTexts.map(text => ({ id: newId(), text }));
+        const newTasks: RoutineTask[] = taskTexts.map(text => ({ id: newId(), text, completed: false }));
         const newDbTasks = newTasks.map(task => ({ ...task, routine_id: routineId, user_id: user.id }));
 
         const oldRoutines = routines;
@@ -383,7 +445,7 @@ function App() {
         
         const { error } = await supabase.from('routine_tasks').insert(newDbTasks);
         if(error){
-            console.error("Failed to bulk insert generated routine tasks:", error);
+            console.error("Failed to bulk insert generated routine tasks:", error.message);
             setRoutines(oldRoutines);
         }
     } finally {
@@ -400,7 +462,7 @@ function App() {
           setTemplates(prev => [newTemplate, ...prev]);
           const { error } = await supabase.from('routine_templates').insert({ id: newTemplate.id, user_id: user.id, name: newTemplate.name, tasks: newTemplate.tasks });
           if(error) {
-              console.error(error);
+              console.error("Failed to save template:", error.message);
               setTemplates(prev => prev.filter(t => t.id !== newTemplate.id));
           }
       }
@@ -414,17 +476,17 @@ function App() {
         const newRoutine: Routine = { id: newId(), name: template.name.replace(' (Modello)', '').trim(), tasks: [] };
         const { error: routineError } = await supabase.from('routines').insert({ id: newRoutine.id, user_id: user.id, name: newRoutine.name });
         if (routineError) {
-            console.error(routineError);
+            console.error(routineError.message);
             return;
         }
 
         // Then create and associate the tasks
-        const newTasks: RoutineTask[] = template.tasks.map(t => ({ ...t, id: newId() }));
+        const newTasks: RoutineTask[] = template.tasks.map(t => ({ text: t.text, id: newId(), completed: false }));
         const newDbTasks = newTasks.map(task => ({ ...task, routine_id: newRoutine.id, user_id: user.id }));
         
         const { error: tasksError } = await supabase.from('routine_tasks').insert(newDbTasks);
         if (tasksError) {
-            console.error(tasksError);
+            console.error(tasksError.message);
             // Optionally delete the created routine for cleanup
             await supabase.from('routines').delete().eq('id', newRoutine.id);
             return;
@@ -436,11 +498,12 @@ function App() {
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
+      if (!user) return;
       const oldTemplates = templates;
       setTemplates(templates.filter(t => t.id !== templateId));
-      const { error } = await supabase.from('routine_templates').delete().eq('id', templateId);
+      const { error } = await supabase.from('routine_templates').delete().eq('user_id', user.id).eq('id', templateId);
       if(error){
-          console.error(error);
+          console.error("Failed to delete template:", error.message);
           setTemplates(oldTemplates);
       }
   };
@@ -452,17 +515,18 @@ function App() {
       setAppointments(prev => [...prev, newAppointment].sort((a,b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()));
       const { error } = await supabase.from('appointments').insert({ id: newAppointment.id, user_id: user.id, ...appointment});
       if(error){
-          console.error(error);
+          console.error("Failed to add appointment:", error.message);
           setAppointments(prev => prev.filter(a => a.id !== newAppointment.id));
       }
   };
 
   const handleDeleteAppointment = async (id: string) => {
+      if (!user) return;
       const oldAppointments = appointments;
       setAppointments(appointments.filter(a => a.id !== id));
-      const { error } = await supabase.from('appointments').delete().eq('id', id);
+      const { error } = await supabase.from('appointments').delete().eq('user_id', user.id).eq('id', id);
       if(error){
-          console.error(error);
+          console.error("Failed to delete appointment:", error.message);
           setAppointments(oldAppointments);
       }
   };
@@ -474,44 +538,48 @@ function App() {
       setGoals(prev => [newGoal, ...prev]);
       const { error } = await supabase.from('goals').insert({id: newGoal.id, user_id: user.id, title: newGoal.title, description: newGoal.description, target_date: newGoal.targetDate, completed: false, linked_task_ids: []});
       if(error){
-          console.error(error);
+          console.error("Failed to add goal:", error.message);
           setGoals(prev => prev.filter(g => g.id !== newGoal.id));
       }
   };
   
-  const handleUpdateGoal = async (updatedGoalData: Omit<Goal, 'id' | 'completed' | 'linkedTaskIds'> & { id: string }) => {
+  const handleUpdateGoal = async (updatedGoalData: Omit<Goal, 'completed' | 'linkedTaskIds'> & { id: string }) => {
+      if (!user) return;
       const oldGoals = goals;
-      setGoals(goals.map(g => g.id === updatedGoalData.id ? { ...g, ...updatedGoalData } : g));
-      const { error } = await supabase.from('goals').update({ title: updatedGoalData.title, description: updatedGoalData.description, target_date: updatedGoalData.targetDate }).eq('id', updatedGoalData.id);
+      setGoals(goals.map(g => g.id === updatedGoalData.id ? { ...g, title: updatedGoalData.title, description: updatedGoalData.description, targetDate: updatedGoalData.targetDate } : g));
+      const { error } = await supabase.from('goals').update({ title: updatedGoalData.title, description: updatedGoalData.description, target_date: updatedGoalData.targetDate }).eq('user_id', user.id).eq('id', updatedGoalData.id);
       if(error){
-          console.error(error);
+          console.error("Failed to update goal:", error.message);
           setGoals(oldGoals);
       }
   };
 
   const handleDeleteGoal = async (id: string) => {
+      if (!user) return;
       const oldGoals = goals;
       setGoals(goals.filter(g => g.id !== id));
-      const { error } = await supabase.from('goals').delete().eq('id', id);
+      const { error } = await supabase.from('goals').delete().eq('user_id', user.id).eq('id', id);
       if(error){
-          console.error(error);
+          console.error("Failed to delete goal:", error.message);
           setGoals(oldGoals);
       }
   };
 
   const handleToggleGoal = async (id: string) => {
+      if (!user) return;
       const goal = goals.find(g => g.id === id);
       if(!goal) return;
       const newStatus = !goal.completed;
       setGoals(goals.map(g => g.id === id ? { ...g, completed: newStatus } : g));
-      const { error } = await supabase.from('goals').update({ completed: newStatus }).eq('id', id);
+      const { error } = await supabase.from('goals').update({ completed: newStatus }).eq('user_id', user.id).eq('id', id);
       if(error){
-          console.error(error);
+          console.error("Failed to toggle goal:", error.message);
           setGoals(goals.map(g => g.id === id ? { ...g, completed: !newStatus } : g));
       }
   };
   
   const handleToggleLinkTask = async (goalId: string, taskId: string) => {
+      if (!user) return;
       const goal = goals.find(g => g.id === goalId);
       if(!goal) return;
       const linked = goal.linkedTaskIds.includes(taskId);
@@ -519,9 +587,9 @@ function App() {
       
       setGoals(goals.map(g => g.id === goalId ? { ...g, linkedTaskIds: newLinkedTaskIds } : g));
       
-      const { error } = await supabase.from('goals').update({ linked_task_ids: newLinkedTaskIds }).eq('id', goalId);
+      const { error } = await supabase.from('goals').update({ linked_task_ids: newLinkedTaskIds }).eq('user_id', user.id).eq('id', goalId);
       if(error){
-          console.error(error);
+          console.error("Failed to link task to goal:", error.message);
           setGoals(goals.map(g => g.id === goalId ? { ...g, linkedTaskIds: goal.linkedTaskIds } : g));
       }
   };
@@ -551,6 +619,8 @@ function App() {
                 onDeleteRoutine={handleDeleteRoutine}
                 onAddRoutineTask={handleAddRoutineTask}
                 onDeleteRoutineTask={handleDeleteRoutineTask}
+                onToggleRoutineTask={handleToggleRoutineTask}
+                onResetRoutine={handleResetRoutineTasks}
                 onGenerateTasks={handleGenerateRoutineTasks}
                 generatingRoutineId={generatingRoutineId}
                 onSaveAsTemplate={handleSaveAsTemplate}
@@ -615,7 +685,7 @@ function App() {
   }
 
   return (
-    <div className="bg-slate-100 dark:bg-[#020617] min-h-screen font-sans pb-24 md:pb-4">
+    <div className="bg-slate-100 dark:bg-[#020617] min-h-screen font-sans">
       <Header 
         user={user} 
         onLogout={handleLogout} 
@@ -624,7 +694,7 @@ function App() {
         onSetView={setView} 
         subtitle={subtitle} 
       />
-      <main className="max-w-4xl mx-auto p-4">
+      <main className="max-w-4xl mx-auto p-4 pb-24 md:pb-4">
         {renderMainContent()}
       </main>
       <BottomNav currentView={view} onSetView={setView} />

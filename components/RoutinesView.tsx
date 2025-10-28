@@ -5,6 +5,7 @@ import { TrashIcon } from './icons/TrashIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
 import { BookmarkIcon } from './icons/BookmarkIcon';
+import { RoutineIcon } from './icons/RoutineIcon';
 
 interface RoutinesViewProps {
     routines: Routine[];
@@ -13,6 +14,8 @@ interface RoutinesViewProps {
     onDeleteRoutine: (id: string) => void;
     onAddRoutineTask: (routineId: string, taskText: string) => void;
     onDeleteRoutineTask: (routineId: string, taskId: string) => void;
+    onToggleRoutineTask: (routineId: string, taskId: string) => void;
+    onResetRoutine: (routineId: string) => void;
     onGenerateTasks: (routineId: string, routineName: string) => void;
     generatingRoutineId: string | null;
     onSaveAsTemplate: (routineId: string) => void;
@@ -25,10 +28,12 @@ const RoutineItem: React.FC<{
     onDelete: (id: string) => void;
     onAddTask: (routineId: string, taskText: string) => void;
     onDeleteTask: (routineId: string, taskId: string) => void;
+    onToggleTask: (routineId: string, taskId: string) => void;
+    onReset: (routineId: string) => void;
     onGenerate: (routineId: string, routineName: string) => void;
     isGenerating: boolean;
     onSave: (routineId: string) => void;
-}> = ({ routine, onDelete, onAddTask, onDeleteTask, onGenerate, isGenerating, onSave }) => {
+}> = ({ routine, onDelete, onAddTask, onDeleteTask, onToggleTask, onReset, onGenerate, isGenerating, onSave }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [newTaskText, setNewTaskText] = useState('');
 
@@ -39,6 +44,8 @@ const RoutineItem: React.FC<{
             setNewTaskText('');
         }
     }
+    
+    const hasCompletedTasks = routine.tasks.some(t => t.completed);
 
     return (
         <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-md transition-all duration-300">
@@ -57,10 +64,38 @@ const RoutineItem: React.FC<{
             </div>
             {isExpanded && (
                 <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
+                    {routine.tasks.length > 0 && (
+                        <div className="flex justify-end">
+                             <button
+                                onClick={() => onReset(routine.id)}
+                                disabled={!hasCompletedTasks}
+                                className="flex items-center gap-1 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline disabled:text-slate-500 disabled:no-underline disabled:cursor-not-allowed"
+                            >
+                                <RoutineIcon className="w-4 h-4" />
+                                <span>Resetta Completamento</span>
+                            </button>
+                        </div>
+                    )}
                     {routine.tasks.map(task => (
-                        <div key={task.id} className="flex items-center justify-between p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 group">
-                            <span className="text-slate-700 dark:text-slate-300">{task.text}</span>
-                            <button onClick={() => onDeleteTask(routine.id, task.id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><TrashIcon className="w-4 h-4"/></button>
+                        <div key={task.id} className="flex items-center justify-between p-2 rounded-md group hover:bg-slate-100 dark:hover:bg-slate-800/50">
+                            <div className="flex items-center gap-3 flex-grow">
+                                <input
+                                    type="checkbox"
+                                    checked={task.completed}
+                                    onChange={() => onToggleTask(routine.id, task.id)}
+                                    className="h-5 w-5 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
+                                    id={`routine-task-${task.id}`}
+                                />
+                                <label
+                                    htmlFor={`routine-task-${task.id}`}
+                                    className={`flex-grow cursor-pointer text-slate-700 dark:text-slate-300 ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}
+                                >
+                                    {task.text}
+                                </label>
+                            </div>
+                            <button onClick={() => onDeleteTask(routine.id, task.id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <TrashIcon className="w-4 h-4"/>
+                            </button>
                         </div>
                     ))}
                     {routine.tasks.length === 0 && <p className="text-sm text-slate-400 italic">Nessun compito in questa routine.</p>}
@@ -129,6 +164,8 @@ const RoutinesView: React.FC<RoutinesViewProps> = (props) => {
                         onDelete={props.onDeleteRoutine}
                         onAddTask={props.onAddRoutineTask}
                         onDeleteTask={props.onDeleteRoutineTask}
+                        onToggleTask={props.onToggleRoutineTask}
+                        onReset={props.onResetRoutine}
                         onGenerate={props.onGenerateTasks}
                         isGenerating={props.generatingRoutineId === routine.id}
                         onSave={props.onSaveAsTemplate}
