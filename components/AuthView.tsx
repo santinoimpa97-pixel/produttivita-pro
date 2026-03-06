@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { User, Lock, Mail, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 type AuthMode = 'login' | 'register' | 'forgotPassword';
 

@@ -9,7 +9,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { View } from './BottomNav';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface UserMenuProps {
     user: User;

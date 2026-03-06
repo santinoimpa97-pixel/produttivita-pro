@@ -7,7 +7,7 @@ import {
   BarChart3,
   StickyNote
 } from 'lucide-react';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 export type View = 'tasks' | 'routines' | 'goals' | 'calendar' | 'analytics' | 'notes' | 'profile';
 

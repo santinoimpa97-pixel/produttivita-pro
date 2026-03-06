@@ -3,7 +3,7 @@ import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Task } from '../types';
 import TaskItem from './TaskItem';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 export interface TaskListProps {
   tasks: Task[];

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Target, Calendar, AlignLeft, Save, Sparkles } from 'lucide-react';
 import { Goal } from '../types';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface GoalModalProps {
     isOpen: boolean;

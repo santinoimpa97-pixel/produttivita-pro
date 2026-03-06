@@ -27,16 +27,7 @@ import BottomNav, { View } from './components/BottomNav';
 import { supabase } from './supabaseClient';
 import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote } from './services/geminiService';
 
-// Language Context
-export interface LanguageContextType {
-  language: Language;
-  t: (key: TranslationKey) => string;
-}
-export const LanguageContext = createContext<LanguageContextType>({
-  language: 'it',
-  t: getTranslator('it'),
-});
-export const useLanguage = () => useContext(LanguageContext);
+import { LanguageContext, useLanguage } from './LanguageContext';
 
 // Main App Component
 function App() {

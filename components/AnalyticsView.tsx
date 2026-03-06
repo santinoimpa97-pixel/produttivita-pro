@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { BarChart3, TrendingUp, CheckCircle2, AlertCircle, PieChart, BarChart as BarChartIcon } from 'lucide-react';
 import { ResponsiveContainer, PieChart as RePieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Task, Priority } from '../types';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 const StatCard: React.FC<{ title: string; value: string | number; description: string; icon: React.ReactNode; color: string }> = ({ title, value, description, icon, color }) => (
     <div className="glass-card p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800/50 hover:shadow-xl transition-all group">

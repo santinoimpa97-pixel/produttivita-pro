@@ -5,7 +5,7 @@ import { Task, Priority } from '../types';
 import TaskInput from './TaskInput';
 import TaskList from './TaskList';
 import TaskCategory from './TaskCategory';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface TasksViewProps {
   tasks: Task[];

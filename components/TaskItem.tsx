@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Task, SubTask, Priority } from '../types';
 import SubTaskItem from './SubTaskItem';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface TaskItemProps {
   task: Task;

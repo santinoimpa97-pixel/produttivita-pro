@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Sparkles, ChevronDown, Bookmark, RotateCcw, CheckCircle2, Circle, ListTodo, LayoutGrid } from 'lucide-react';
 import { Routine, RoutineTemplate, RoutineTask } from '../types';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface RoutinesViewProps {
     routines: Routine[];

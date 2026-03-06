@@ -3,7 +3,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Link2, CheckCircle2, Circle, AlertCircle, Check } from 'lucide-react';
 import { Task } from '../types';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface LinkTasksModalProps {
     isOpen: boolean;

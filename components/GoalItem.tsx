@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Pencil, Trash2, Link2, Calendar, CheckCircle2, Circle, Target } from 'lucide-react';
 import { Goal, Task } from '../types';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface GoalItemProps {
     goal: Goal;

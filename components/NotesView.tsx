@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, StickyNote, Search, Edit3, Save, X } from 'lucide-react';
 import { Note } from '../types';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface NotesViewProps {
     notes: Note[];

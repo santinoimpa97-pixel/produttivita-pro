@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Priority } from '../types';
 import { Plus, Calendar, Flag } from 'lucide-react';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface TaskInputProps {
   onAddTask: (text: string, priority: Priority, dueDate: string | null) => void;

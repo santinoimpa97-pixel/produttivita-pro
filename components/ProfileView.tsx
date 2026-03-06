@@ -4,7 +4,7 @@ import { User as UserIcon, Mail, Key, LogOut, Save, ShieldCheck, AlertCircle, Ch
 import { supabase } from '../supabaseClient';
 import { User } from '../types';
 import { Language } from '../i18n';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface ProfileViewProps {
   user: User;

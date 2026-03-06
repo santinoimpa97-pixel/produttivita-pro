@@ -5,7 +5,7 @@ import { Goal, Task } from '../types';
 import GoalItem from './GoalItem';
 import GoalModal from './GoalModal';
 import LinkTasksModal from './LinkTasksModal';
-import { useLanguage } from '../App';
+import { useLanguage } from '../LanguageContext';
 
 interface GoalsViewProps {
     goals: Goal[];
