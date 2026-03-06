@@ -5,6 +5,7 @@ import { Goal, Task } from '../types';
 import GoalItem from './GoalItem';
 import GoalModal from './GoalModal';
 import LinkTasksModal from './LinkTasksModal';
+import { useLanguage } from '../App';
 
 interface GoalsViewProps {
     goals: Goal[];
@@ -17,6 +18,7 @@ interface GoalsViewProps {
 }
 
 const GoalsView: React.FC<GoalsViewProps> = (props) => {
+    const { t } = useLanguage();
     const [isGoalModalOpen, setIsGoalModalOpen] = React.useState(false);
     const [goalToEdit, setGoalToEdit] = React.useState<Goal | null>(null);
 
@@ -58,16 +60,16 @@ const GoalsView: React.FC<GoalsViewProps> = (props) => {
                 <div className="space-y-1">
                     <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
                         <Target className="text-brand-600" size={28} />
-                        I tuoi Obiettivi
+                        {t('goals_title')}
                     </h2>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Pianifica e monitora i tuoi traguardi a lungo termine.</p>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">{t('goals_empty')}</p>
                 </div>
                 <button
                     onClick={handleOpenAddModal}
                     className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-600 text-white font-bold rounded-2xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 active:scale-[0.98] transition-all uppercase tracking-widest text-xs"
                 >
                     <Plus size={18} strokeWidth={3} />
-                    Nuovo Obiettivo
+                    {t('goals_add')}
                 </button>
             </header>
             
@@ -100,9 +102,9 @@ const GoalsView: React.FC<GoalsViewProps> = (props) => {
                             <div className="bg-slate-100 dark:bg-slate-800 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3">
                                 <Sparkles className="text-slate-400" size={40} />
                             </div>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Punta in alto</h3>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">{t('goals_title')}</h3>
                             <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto font-medium">
-                                Non hai ancora definito degli obiettivi. Inizia a pianificare i tuoi successi futuri.
+                                {t('goals_empty')}
                             </p>
                         </motion.div>
                     )}

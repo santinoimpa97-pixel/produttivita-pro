@@ -3,6 +3,7 @@ import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Task } from '../types';
 import TaskItem from './TaskItem';
+import { useLanguage } from '../App';
 
 export interface TaskListProps {
   tasks: Task[];
@@ -29,11 +30,12 @@ const TaskList: React.FC<TaskListProps> = ({
   onGenerateSubtasks,
   generatingTaskId,
 }) => {
+  const { t } = useLanguage();
   if (tasks.length === 0) {
     return (
       <div className="text-center py-10 px-4">
         <p className="text-slate-400 dark:text-slate-500 font-medium italic">
-          Nessuna attività in questa categoria.
+          {t('tasks_empty_category')}
         </p>
       </div>
     );

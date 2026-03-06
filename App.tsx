@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, createContext, useContext } from 'react';
+import { Language, getTranslator, TranslationKey } from './i18n';
 import { Session } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -26,9 +27,30 @@ import BottomNav, { View } from './components/BottomNav';
 import { supabase } from './supabaseClient';
 import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote } from './services/geminiService';
 
+// Language Context
+export interface LanguageContextType {
+  language: Language;
+  t: (key: TranslationKey) => string;
+}
+export const LanguageContext = createContext<LanguageContextType>({
+  language: 'it',
+  t: getTranslator('it'),
+});
+export const useLanguage = () => useContext(LanguageContext);
+
 // Main App Component
 function App() {
   const newId = () => crypto.randomUUID();
+
+  const [language, setLanguage] = useState<Language>(() => {
+    return (localStorage.getItem('language') as Language) || 'it';
+  });
+  const t = useMemo(() => getTranslator(language), [language]);
+
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+  };
 
   // State
   const [session, setSession] = useState<Session | null>(null);
@@ -45,7 +67,7 @@ function App() {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
   });
   const [view, setView] = useState<View>('tasks');
-  const [subtitle, setSubtitle] = useState('Caricamento frase del giorno...');
+  const [subtitle, setSubtitle] = useState(() => getTranslator(((localStorage.getItem('language') as Language) || 'it'))('header_subtitle_loading'));
   
   // Data States
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -61,12 +83,19 @@ function App() {
 
   // Effects
   useEffect(() => {
-    const fetchQuote = async () => {
-        const quote = await generateMotivationalQuote();
-        setSubtitle(quote);
-    };
-    fetchQuote();
-  }, []);
+    // Only fetch quote if we have a user (meaning we are on the main dashboard)
+    if (user?.id) {
+        const fetchQuote = async () => {
+            setSubtitle(t('header_subtitle_loading'));
+            const quote = await generateMotivationalQuote(language);
+            setSubtitle(quote);
+        };
+        fetchQuote();
+    }
+  }, [user?.id, language]);
+
+  // pass language to all Gemini calls
+  const currentLanguage = language;
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
@@ -136,7 +165,7 @@ function App() {
 
     } catch (error: any) {
         console.error("Error fetching data:", error.message);
-        setDataError("Impossibile caricare i dati. Controlla la tua connessione e riprova.");
+        setDataError(t('error_load'));
     } finally {
         setDataLoading(false);
     }
@@ -465,7 +494,7 @@ function App() {
       if (!user) return;
       const routine = routines.find(r => r.id === routineId);
       if (routine) {
-          const newTemplate: RoutineTemplate = { id: newId(), name: `${routine.name} (Modello)`, tasks: routine.tasks.map(({text}) => ({text})) };
+          const newTemplate: RoutineTemplate = { id: newId(), name: `${routine.name} ${t('routines_template_suffix')}`, tasks: routine.tasks.map(({text}) => ({text})) };
           setTemplates(prev => [newTemplate, ...prev]);
           const { error } = await supabase.from('routine_templates').insert({ id: newTemplate.id, user_id: user.id, name: newTemplate.name, tasks: newTemplate.tasks });
           if(error) {
@@ -480,7 +509,7 @@ function App() {
     const template = templates.find(t => t.id === templateId);
     if (template) {
         // Create the routine first
-        const newRoutine: Routine = { id: newId(), name: template.name.replace(' (Modello)', '').trim(), tasks: [] };
+        const newRoutine: Routine = { id: newId(), name: template.name.replace(` ${t('routines_template_suffix')}`, '').trim(), tasks: [] };
         const { error: routineError } = await supabase.from('routines').insert({ id: newRoutine.id, user_id: user.id, name: newRoutine.name });
         if (routineError) {
             console.error(routineError.message);
@@ -695,17 +724,17 @@ function App() {
                 onDeleteNote={handleDeleteNote}
             />;
         case 'profile':
-            return user ? <ProfileView user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : null;
+            return user ? <ProfileView user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} language={language} onSetLanguage={handleSetLanguage} /> : null;
         default:
             return <h2>View not found</h2>;
     }
-  }, [view, tasks, routines, templates, appointments, goals, generatingTaskId, generatingRoutineId, user]);
+  }, [view, tasks, routines, templates, appointments, goals, notes, generatingTaskId, generatingRoutineId, user, language]);
 
   const renderMainContent = () => {
     if (dataLoading) {
       return (
         <div className="text-center p-8 text-slate-500 dark:text-slate-400">
-          Caricamento dei tuoi dati...
+          {t('loading')}
         </div>
       );
     }
@@ -717,7 +746,7 @@ function App() {
             onClick={() => user && fetchData(user.id)} 
             className="mt-4 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
           >
-            Riprova
+            {t('retry')}
           </button>
         </div>
       );
@@ -726,7 +755,7 @@ function App() {
   };
 
   if (authLoading) {
-    return <div className="bg-slate-100 dark:bg-[#020617] min-h-screen flex items-center justify-center text-slate-500">Verifica in corso...</div>;
+    return <div className="bg-slate-100 dark:bg-[#020617] min-h-screen flex items-center justify-center text-slate-500">{t('auth_checking')}</div>;
   }
 
   if (!session || !user) {
@@ -734,6 +763,7 @@ function App() {
   }
 
   return (
+    <LanguageContext.Provider value={{ language, t }}>
     <div className="bg-slate-50 dark:bg-[#020617] min-h-screen font-sans selection:bg-brand-100 selection:text-brand-900">
       <Header 
         user={user} 
@@ -758,6 +788,7 @@ function App() {
       </main>
       <BottomNav currentView={view} onSetView={setView} />
     </div>
+    </LanguageContext.Provider>
   );
 }
 

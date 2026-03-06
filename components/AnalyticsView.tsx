@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { BarChart3, TrendingUp, CheckCircle2, AlertCircle, PieChart, BarChart as BarChartIcon } from 'lucide-react';
 import { ResponsiveContainer, PieChart as RePieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Task, Priority } from '../types';
+import { useLanguage } from '../App';
 
 const StatCard: React.FC<{ title: string; value: string | number; description: string; icon: React.ReactNode; color: string }> = ({ title, value, description, icon, color }) => (
     <div className="glass-card p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800/50 hover:shadow-xl transition-all group">
@@ -20,19 +21,20 @@ const StatCard: React.FC<{ title: string; value: string | number; description: s
 );
 
 const AnalyticsView: React.FC<{ tasks: Task[] }> = ({ tasks }) => {
+    const { t } = useLanguage();
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.completed).length;
     const pendingTasks = totalTasks - completedTasks;
     
     const priorityData = [
-        { name: 'Alta', value: tasks.filter(t => t.priority === Priority.High).length, color: '#ef4444' },
-        { name: 'Media', value: tasks.filter(t => t.priority === Priority.Medium).length, color: '#f59e0b' },
-        { name: 'Bassa', value: tasks.filter(t => t.priority === Priority.Low).length, color: '#10b981' },
+        { name: t('tasks_priority_high'), value: tasks.filter(t => t.priority === Priority.High).length, color: '#ef4444' },
+        { name: t('tasks_priority_medium'), value: tasks.filter(t => t.priority === Priority.Medium).length, color: '#f59e0b' },
+        { name: t('tasks_priority_low'), value: tasks.filter(t => t.priority === Priority.Low).length, color: '#10b981' },
     ];
 
     const completionData = [
-        { name: 'Completate', value: completedTasks, color: '#10b981' },
-        { name: 'In Sospeso', value: pendingTasks, color: '#64748b' },
+        { name: t('analytics_completed'), value: completedTasks, color: '#10b981' },
+        { name: t('analytics_pending'), value: pendingTasks, color: '#64748b' },
     ];
 
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -43,23 +45,23 @@ const AnalyticsView: React.FC<{ tasks: Task[] }> = ({ tasks }) => {
             <div className="space-y-1">
                 <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
                     <BarChart3 className="text-brand-600" size={28} />
-                    Analytics
+                    {t('analytics_title')}
                 </h2>
-                <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Monitora i tuoi progressi e la tua produttività.</p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">{t('analytics_subtitle')}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <StatCard 
-                    title="Totale Attività" 
+                    title={t('analytics_total_tasks')} 
                     value={totalTasks} 
-                    description="Volume totale di lavoro gestito finora." 
+                    description={t('analytics_total_desc')} 
                     icon={<TrendingUp className="text-brand-600" size={24} />}
                     color="bg-brand-500"
                 />
                 <StatCard 
-                    title="Completate" 
+                    title={t('analytics_completed')} 
                     value={completedTasks} 
-                    description="Traguardi raggiunti con successo." 
+                    description={t('analytics_completed_desc')} 
                     icon={<CheckCircle2 className="text-emerald-600" size={24} />}
                     color="bg-emerald-500"
                 />
@@ -71,7 +73,7 @@ const AnalyticsView: React.FC<{ tasks: Task[] }> = ({ tasks }) => {
                 <div className="flex items-center justify-between">
                     <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-2">
                         <PieChart size={16} />
-                        Stato Completamento
+                        {t('analytics_completion_status')}
                     </h3>
                     <span className="text-2xl font-black text-brand-600 dark:text-brand-400">{completionRate}%</span>
                 </div>
@@ -101,7 +103,7 @@ const AnalyticsView: React.FC<{ tasks: Task[] }> = ({ tasks }) => {
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2">
                             <AlertCircle size={32} />
-                            <p className="text-sm font-medium italic">Nessun dato disponibile</p>
+                            <p className="text-sm font-medium italic">{t('analytics_no_data')}</p>
                         </div>
                     )}
                 </div>
@@ -119,7 +121,7 @@ const AnalyticsView: React.FC<{ tasks: Task[] }> = ({ tasks }) => {
             <section className="glass-card p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/50 space-y-6">
                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 flex items-center gap-2">
                     <BarChartIcon size={16} />
-                    Distribuzione Priorità
+                    {t('analytics_priority_dist')}
                 </h3>
                 
                 <div className="h-64 w-full">
@@ -148,7 +150,7 @@ const AnalyticsView: React.FC<{ tasks: Task[] }> = ({ tasks }) => {
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2">
                             <AlertCircle size={32} />
-                            <p className="text-sm font-medium italic">Nessun dato disponibile</p>
+                            <p className="text-sm font-medium italic">{t('analytics_no_data')}</p>
                         </div>
                     )}
                 </div>

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Bell } from 'lucide-react';
 import { Appointment } from '../types';
+import { useLanguage } from '../App';
 
 interface CalendarViewProps {
     appointments: Appointment[];
@@ -17,6 +18,8 @@ const toLocalISOString = (date: Date): string => {
 };
 
 const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointment, onDeleteAppointment }) => {
+    const { t, language } = useLanguage();
+    const locale = language === 'en' ? 'en-US' : 'it-IT';
     const [currentDate, setCurrentDate] = useState(new Date());
     const [newAppointmentText, setNewAppointmentText] = useState('');
     const [newAppointmentDate, setNewAppointmentDate] = useState(toLocalISOString(new Date()));
@@ -73,7 +76,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1));
     };
 
-    const weekDays = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+    const weekDays = language === 'en'
+        ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        : ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
     
     return (
         <div className="space-y-10">
@@ -81,9 +86,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                 <div className="space-y-1">
                     <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
                         <CalendarIcon className="text-brand-600" size={28} />
-                        Calendario
+                        {t('calendar_title')}
                     </h2>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Gestisci i tuoi appuntamenti e scadenze.</p>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">{t('calendar_empty')}</p>
                 </div>
 
                 <div className="glass-card p-6 rounded-[2.5rem] shadow-xl shadow-brand-500/5">
@@ -96,7 +101,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                                 type="text" 
                                 value={newAppointmentText} 
                                 onChange={e => setNewAppointmentText(e.target.value)} 
-                                placeholder="Cosa hai in programma?" 
+                                placeholder={t('calendar_add')} 
                                 className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all" 
                                 required 
                             />
@@ -118,7 +123,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                             />
                         </div>
                         <button type="submit" className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-brand-600 text-white font-black rounded-2xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98] uppercase tracking-widest text-xs">
-                            <Plus size={20} strokeWidth={3} /> Aggiungi Appuntamento
+                            <Plus size={20} strokeWidth={3} /> {t('calendar_add')}
                         </button>
                     </form>
                 </div>
@@ -127,7 +132,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
             <section className="glass-card p-6 rounded-[2.5rem] shadow-xl shadow-brand-500/5 overflow-hidden">
                 <div className="flex justify-between items-center mb-8">
                     <h3 className="text-xl font-black text-slate-900 dark:text-white capitalize">
-                        {currentDate.toLocaleString('it-IT', { month: 'long', year: 'numeric' })}
+                        {currentDate.toLocaleString(locale, { month: 'long', year: 'numeric' })}
                     </h3>
                     <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
                         <button onClick={() => changeMonth(-1)} className="p-2 text-slate-500 hover:text-brand-600 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all"><ChevronLeft size={20} /></button>
@@ -183,7 +188,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
             
             <section className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Prossimi Appuntamenti</h3>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{t('calendar_add')}</h3>
                     <Clock size={16} className="text-slate-400" />
                 </div>
                 <div className="grid grid-cols-1 gap-4">
@@ -199,10 +204,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                                 >
                                     <div className="flex-shrink-0 w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex flex-col items-center justify-center border border-slate-100 dark:border-slate-700">
                                         <span className="text-xl font-black text-slate-900 dark:text-white">
-                                            {new Date(appointment.date).toLocaleDateString('it-IT', { timeZone: 'UTC', day: '2-digit' })}
+                                            {new Date(appointment.date).toLocaleDateString(locale, { timeZone: 'UTC', day: '2-digit' })}
                                         </span>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-brand-600 dark:text-brand-400">
-                                            {new Date(appointment.date).toLocaleDateString('it-IT', { timeZone: 'UTC', month: 'short' })}
+                                            {new Date(appointment.date).toLocaleDateString(locale, { timeZone: 'UTC', month: 'short' })}
                                         </span>
                                     </div>
                                     <div className="flex-grow space-y-1">
@@ -222,7 +227,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                             ))
                         ) : (
                             <div className="text-center py-12 glass-card rounded-[2.5rem] border-dashed border-2 border-slate-200 dark:border-slate-800">
-                                <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Nessun appuntamento in programma.</p>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">{t('calendar_empty')}</p>
                             </div>
                         )}
                     </AnimatePresence>

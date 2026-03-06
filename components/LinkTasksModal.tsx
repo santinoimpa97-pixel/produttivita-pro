@@ -3,6 +3,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Link2, CheckCircle2, Circle, AlertCircle, Check } from 'lucide-react';
 import { Task } from '../types';
+import { useLanguage } from '../App';
 
 interface LinkTasksModalProps {
     isOpen: boolean;
@@ -14,6 +15,7 @@ interface LinkTasksModalProps {
 }
 
 const LinkTasksModal: React.FC<LinkTasksModalProps> = ({ isOpen, onClose, tasks, linkedTaskIds, onToggleLinkTask, goalTitle }) => {
+    const { t } = useLanguage();
     const availableTasks = tasks.filter(t => !t.completed);
 
     return (
@@ -41,8 +43,8 @@ const LinkTasksModal: React.FC<LinkTasksModalProps> = ({ isOpen, onClose, tasks,
                                         <Link2 size={24} strokeWidth={2.5} />
                                     </div>
                                     <div className="space-y-0.5">
-                                        <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Collega Attività</h2>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Allinea le tue azioni</p>
+                                        <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">{t('goals_link_tasks')}</h2>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{t('goals_link_subtitle')}</p>
                                     </div>
                                 </div>
                                 <button 
@@ -53,7 +55,7 @@ const LinkTasksModal: React.FC<LinkTasksModalProps> = ({ isOpen, onClose, tasks,
                                 </button>
                             </div>
                             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                                Seleziona le attività da collegare all'obiettivo: <span className="text-brand-600 dark:text-brand-400 font-bold">{goalTitle}</span>
+                                {t('goals_link_select')} <span className="text-brand-600 dark:text-brand-400 font-bold">{goalTitle}</span>
                             </p>
                         </div>
 
@@ -84,7 +86,7 @@ const LinkTasksModal: React.FC<LinkTasksModalProps> = ({ isOpen, onClose, tasks,
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-12 text-slate-400 space-y-3">
                                     <AlertCircle size={40} strokeWidth={1.5} />
-                                    <p className="text-sm font-medium italic text-center max-w-[200px]">Nessuna attività disponibile da collegare.</p>
+                                    <p className="text-sm font-medium italic text-center max-w-[200px]">{t('goals_link_empty')}</p>
                                 </div>
                             )}
                         </div>
@@ -94,7 +96,7 @@ const LinkTasksModal: React.FC<LinkTasksModalProps> = ({ isOpen, onClose, tasks,
                                 onClick={onClose} 
                                 className="w-full py-4 bg-brand-600 text-white font-black rounded-2xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98] uppercase tracking-widest text-xs"
                             >
-                                Fatto
+                                {t('goals_done')}
                             </button>
                         </div>
                     </motion.div>

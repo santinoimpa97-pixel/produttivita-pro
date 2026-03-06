@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Filter, Calendar, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import { Task, Priority } from '../types';
 import TaskInput from './TaskInput';
 import TaskList from './TaskList';
 import TaskCategory from './TaskCategory';
+import { useLanguage } from '../App';
 
 interface TasksViewProps {
   tasks: Task[];
@@ -22,6 +23,7 @@ interface TasksViewProps {
 
 const TasksView: React.FC<TasksViewProps> = (props) => {
   const { tasks, onAddTask, ...taskListProps } = props;
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
 
   const today = new Date();
@@ -66,7 +68,7 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
           </div>
           <input
               type="text"
-              placeholder="Cerca tra le tue attività..."
+              placeholder={t('tasks_empty')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-2 py-2 bg-transparent text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none font-medium"
@@ -76,7 +78,7 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
               onClick={() => setSearchTerm('')}
               className="pr-3 text-xs font-bold text-brand-600 uppercase tracking-widest"
             >
-              Cancella
+              {t('cancel')}
             </button>
           )}
         </div>
@@ -86,29 +88,29 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
         <AnimatePresence mode="popLayout">
           {overdueTasks.length > 0 && (
             <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <TaskCategory title="In Ritardo" tasks={overdueTasks} {...taskListProps} defaultOpen={true} />
+              <TaskCategory title={t('tasks_overdue')} tasks={overdueTasks} {...taskListProps} defaultOpen={true} />
             </motion.div>
           )}
           
           <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <TaskCategory title="Oggi" tasks={todayTasks} {...taskListProps} defaultOpen={true} />
+              <TaskCategory title={t('nav_tasks')} tasks={todayTasks} {...taskListProps} defaultOpen={true} />
           </motion.div>
 
           {upcomingTasks.length > 0 && (
             <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <TaskCategory title="Prossimamente" tasks={upcomingTasks} {...taskListProps} />
+              <TaskCategory title={t('tasks_upcoming')} tasks={upcomingTasks} {...taskListProps} />
             </motion.div>
           )}
 
           {noDueDateTasks.length > 0 && (
             <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <TaskCategory title="Senza Scadenza" tasks={noDueDateTasks} {...taskListProps} />
+              <TaskCategory title={t('tasks_no_due_date')} tasks={noDueDateTasks} {...taskListProps} />
             </motion.div>
           )}
 
           {completedTasks.length > 0 && (
             <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <TaskCategory title="Completate" tasks={completedTasks} {...taskListProps} />
+              <TaskCategory title={t('tasks_completed')} tasks={completedTasks} {...taskListProps} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -123,9 +125,9 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
             <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <Plus className="text-slate-400" size={32} />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Inizia ora</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">{t('tasks_empty')}</h3>
             <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-              Non hai ancora aggiunto nessuna attività. Crea la tua prima task per iniziare a organizzare la giornata.
+              {t('tasks_add_placeholder')}
             </p>
         </motion.div>
       )}

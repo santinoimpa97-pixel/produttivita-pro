@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Task, SubTask, Priority } from '../types';
 import SubTaskItem from './SubTaskItem';
+import { useLanguage } from '../App';
 
 interface TaskItemProps {
   task: Task;
@@ -60,6 +61,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onGenerateSubtasks,
   isGenerating
 }) => {
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(task.text);
   const [newSubTaskText, setNewSubTaskText] = useState('');
@@ -147,7 +149,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
               )}
               {task.subTasks.length > 0 && (
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                  {task.subTasks.filter(s => s.completed).length}/{task.subTasks.length} Sotto-attività
+                  {task.subTasks.filter(s => s.completed).length}/{task.subTasks.length} {t('tasks_subtasks')}
                 </span>
               )}
             </div>
@@ -157,14 +159,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
             <button 
               onClick={() => setIsEditing(true)} 
               className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all"
-              title="Modifica"
+              title={t('edit')}
             >
               <Edit2 size={18}/>
             </button>
             <button 
               onClick={() => onDelete(task.id)} 
               className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
-              title="Elimina"
+              title={t('delete')}
             >
               <Trash2 size={18}/>
             </button>
@@ -177,7 +179,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
             className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 uppercase tracking-widest transition-colors"
           >
             <ChevronDown size={14} className={`transition-transform duration-300 ${isSubtasksVisible ? 'rotate-180' : ''}`}/>
-            {isSubtasksVisible ? 'Nascondi Dettagli' : 'Mostra Dettagli'}
+            {isSubtasksVisible ? t('tasks_hide_details') : t('tasks_show_details')}
           </button>
 
           <AnimatePresence>
@@ -204,7 +206,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                       type="text"
                       value={newSubTaskText}
                       onChange={(e) => setNewSubTaskText(e.target.value)}
-                      placeholder="Nuova sotto-attività..."
+                      placeholder={t('tasks_add_subtask')}
                       className="flex-grow px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800/50 border border-transparent focus:border-brand-500 rounded-xl text-slate-900 dark:text-white focus:outline-none transition-all"
                     />
                     <button 
@@ -223,12 +225,12 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     {isGenerating ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Generazione...
+                        {t('tasks_generating')}
                       </>
                     ) : (
                       <>
                         <Sparkles size={16}/>
-                        Genera con IA
+                        {t('tasks_generate_ai')}
                       </>
                     )}
                   </button>

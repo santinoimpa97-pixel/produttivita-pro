@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { User, Lock, Mail, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
+import { useLanguage } from '../App';
 
 type AuthMode = 'login' | 'register' | 'forgotPassword';
 
 const AuthView: React.FC = () => {
+    const { t } = useLanguage();
     const [mode, setMode] = useState<AuthMode>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -35,7 +37,7 @@ const AuthView: React.FC = () => {
             if (error) {
                 setError(error.message);
             } else if (data.user) {
-                setMessage('Registrazione completata! Controlla la tua email per la verifica.');
+                setMessage(t('auth_register_success'));
                 setMode('login');
             }
         }
@@ -55,7 +57,7 @@ const AuthView: React.FC = () => {
         if (error) {
             setError(error.message);
         } else {
-            setMessage('Se l\'email è corretta, riceverai un link per il recupero della password.');
+            setMessage(t('auth_recover_success'));
         }
         setLoading(false);
     }
@@ -65,12 +67,12 @@ const AuthView: React.FC = () => {
             return (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="text-center space-y-2">
-                        <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Recupera Password</h1>
-                        <p className="text-slate-500 dark:text-slate-400 font-medium">Inserisci la tua email per ricevere le istruzioni.</p>
+                        <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{t('auth_recover_title')}</h1>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium">{t('auth_recover_subtitle')}</p>
                     </div>
                      <form onSubmit={handlePasswordReset} className="space-y-6">
                         <div className="space-y-2">
-                            <label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Email</label>
+                            <label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('auth_email')}</label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
                                     <Mail size={18} />
@@ -81,13 +83,13 @@ const AuthView: React.FC = () => {
                         {error && <p className="text-sm font-bold text-red-500 text-center">{error}</p>}
                         {message && <p className="text-sm font-bold text-emerald-500 text-center">{message}</p>}
                         <button type="submit" disabled={loading} className="w-full py-4 px-4 bg-brand-600 text-white font-bold rounded-2xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm">
-                            {loading ? <Loader2 className="animate-spin" size={20} /> : 'Invia Link'}
+                            {loading ? <Loader2 className="animate-spin" size={20} /> : t('auth_send_link')}
                         </button>
                     </form>
                      <p className="text-sm text-center text-slate-500 dark:text-slate-400 font-medium">
-                        Ricordi la password?
+                        {t('auth_remember_password')}
                         <button onClick={() => { setMode('login'); setError(null); setMessage(null); }} className="font-bold text-brand-600 dark:text-brand-400 hover:underline ml-1">
-                            Torna al Login
+                            {t('auth_back_login')}
                         </button>
                     </p>
                 </div>
@@ -101,13 +103,13 @@ const AuthView: React.FC = () => {
                         <Sparkles size={24} className="text-white" />
                     </div>
                     <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">Produttività <span className="text-brand-600">Pro</span></h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">{mode === 'login' ? 'Bentornato! Accedi per continuare.' : 'Inizia oggi il tuo percorso.'}</p>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">{mode === 'login' ? t('auth_welcome_back') : t('auth_start_journey')}</p>
                 </div>
                 
                 <form onSubmit={handleAuth} className="space-y-5">
                     {mode === 'register' && (
                         <div className="space-y-2">
-                            <label htmlFor="displayName" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Nome Visualizzato</label>
+                            <label htmlFor="displayName" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('auth_display_name')}</label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
                                     <User size={18} />
@@ -117,7 +119,7 @@ const AuthView: React.FC = () => {
                         </div>
                     )}
                     <div className="space-y-2">
-                        <label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Email</label>
+                        <label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('auth_email')}</label>
                          <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
                                 <Mail size={18} />
@@ -126,7 +128,7 @@ const AuthView: React.FC = () => {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="password"className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Password</label>
+                        <label htmlFor="password"className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('auth_password')}</label>
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
                                 <Lock size={18} />
@@ -138,7 +140,7 @@ const AuthView: React.FC = () => {
                     {mode === 'login' && (
                         <div className="flex items-center justify-end">
                             <button type="button" onClick={() => setMode('forgotPassword')} className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline uppercase tracking-widest">
-                                Password dimenticata?
+                                {t('auth_forgot_password')}
                             </button>
                         </div>
                     )}
@@ -149,7 +151,7 @@ const AuthView: React.FC = () => {
                     <button type="submit" disabled={loading} className="w-full py-4 px-4 bg-brand-600 text-white font-bold rounded-2xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-sm group">
                         {loading ? <Loader2 className="animate-spin" size={20} /> : (
                             <>
-                                {mode === 'login' ? 'Accedi' : 'Crea Account'}
+                                {mode === 'login' ? t('auth_login') : t('auth_create_account')}
                                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                             </>
                         )}
@@ -157,9 +159,9 @@ const AuthView: React.FC = () => {
                 </form>
 
                 <p className="text-sm text-center text-slate-500 dark:text-slate-400 font-medium">
-                    {mode === 'login' ? "Non hai un account?" : "Hai già un account?"}
+                    {mode === 'login' ? t('auth_no_account') : t('auth_has_account')}
                     <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); setMessage(null); }} className="font-bold text-brand-600 dark:text-brand-400 hover:underline ml-1">
-                        {mode === 'login' ? 'Registrati' : 'Accedi'}
+                        {mode === 'login' ? t('auth_register') : t('auth_login')}
                     </button>
                 </p>
             </div>

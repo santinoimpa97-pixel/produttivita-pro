@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Pencil, Trash2, Link2, Calendar, CheckCircle2, Circle, Target } from 'lucide-react';
 import { Goal, Task } from '../types';
+import { useLanguage } from '../App';
 
 interface GoalItemProps {
     goal: Goal;
@@ -13,6 +14,8 @@ interface GoalItemProps {
 }
 
 const GoalItem: React.FC<GoalItemProps> = ({ goal, tasks, onEdit, onDelete, onLinkTasks, onToggleGoal }) => {
+    const { t, language } = useLanguage();
+    const locale = language === 'en' ? 'en-US' : 'it-IT';
     const linkedTasks = tasks.filter(t => goal.linkedTaskIds.includes(t.id));
     const completedTasks = linkedTasks.filter(t => t.completed).length;
     const progress = linkedTasks.length > 0 ? (completedTasks / linkedTasks.length) * 100 : (goal.completed ? 100 : 0);
@@ -35,7 +38,7 @@ const GoalItem: React.FC<GoalItemProps> = ({ goal, tasks, onEdit, onDelete, onLi
                             {goal.targetDate && (
                                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
                                     <Calendar size={12} />
-                                    Scadenza: {new Date(goal.targetDate).toLocaleDateString('it-IT')}
+                                    {t('tasks_due_date')}: {new Date(goal.targetDate).toLocaleDateString(locale)}
                                 </div>
                             )}
                         </div>
@@ -51,21 +54,21 @@ const GoalItem: React.FC<GoalItemProps> = ({ goal, tasks, onEdit, onDelete, onLi
                 <div className="flex items-center gap-2 self-end md:self-center bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
                     <button 
                         onClick={() => onLinkTasks(goal)} 
-                        title="Collega Attività" 
+                        title={t('goals_link_tasks')} 
                         className="p-2.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all"
                     >
                         <Link2 size={18}/>
                     </button>
                     <button 
                         onClick={() => onEdit(goal)} 
-                        title="Modifica"
+                        title={t('edit')}
                         className="p-2.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all"
                     >
                         <Pencil size={18} />
                     </button>
                     <button 
                         onClick={() => onDelete(goal.id)} 
-                        title="Elimina"
+                        title={t('delete')}
                         className="p-2.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
                     >
                         <Trash2 size={18} />
@@ -76,9 +79,9 @@ const GoalItem: React.FC<GoalItemProps> = ({ goal, tasks, onEdit, onDelete, onLi
             <div className="mt-8 space-y-3">
                 <div className="flex justify-between items-end">
                     <div className="space-y-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Progresso Obiettivo</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{t('goals_progress')}</span>
                         <div className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                            {completedTasks} di {linkedTasks.length} attività completate
+                            {completedTasks} / {linkedTasks.length} {t('goals_completed_tasks')}
                         </div>
                     </div>
                     <span className="text-2xl font-black text-brand-600 dark:text-brand-400 tabular-nums">{Math.round(progress)}%</span>

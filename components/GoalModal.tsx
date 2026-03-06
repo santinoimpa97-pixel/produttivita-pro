@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Target, Calendar, AlignLeft, Save, Sparkles } from 'lucide-react';
 import { Goal } from '../types';
+import { useLanguage } from '../App';
 
 interface GoalModalProps {
     isOpen: boolean;
@@ -11,6 +12,7 @@ interface GoalModalProps {
 }
 
 const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEdit }) => {
+    const { t } = useLanguage();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [targetDate, setTargetDate] = useState('');
@@ -66,9 +68,9 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                                     </div>
                                     <div className="space-y-0.5">
                                         <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
-                                            {goalToEdit ? 'Modifica Obiettivo' : 'Nuovo Obiettivo'}
+                                            {goalToEdit ? t('goals_edit') : t('goals_new')}
                                         </h2>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Definisci i tuoi traguardi</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{t('goals_define')}</p>
                                     </div>
                                 </div>
                                 <button 
@@ -81,7 +83,7 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
 
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label htmlFor="goal-title" className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Titolo</label>
+                                    <label htmlFor="goal-title" className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('goals_title_label')}</label>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
                                             <Sparkles size={18} />
@@ -91,7 +93,7 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                                             type="text"
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
-                                            placeholder="Es. Imparare a suonare la chitarra"
+                                            placeholder={t('goals_title_placeholder')}
                                             className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all"
                                             required
                                         />
@@ -99,7 +101,7 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label htmlFor="goal-description" className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Descrizione</label>
+                                    <label htmlFor="goal-description" className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('goals_description')}</label>
                                     <div className="relative group">
                                         <div className="absolute top-3 left-4 text-slate-400 group-focus-within:text-brand-500 transition-colors">
                                             <AlignLeft size={18} />
@@ -108,7 +110,7 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                                             id="goal-description"
                                             value={description}
                                             onChange={(e) => setDescription(e.target.value)}
-                                            placeholder="Descrivi i passi o la motivazione..."
+                                            placeholder={t('goals_desc_placeholder')}
                                             rows={3}
                                             className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all resize-none"
                                         />
@@ -116,7 +118,7 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label htmlFor="goal-target-date" className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Data Target</label>
+                                    <label htmlFor="goal-target-date" className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('goals_target_date')}</label>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
                                             <Calendar size={18} />
@@ -137,14 +139,14 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                                         onClick={onClose} 
                                         className="flex-1 px-6 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-black rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all uppercase tracking-widest text-xs"
                                     >
-                                        Annulla
+                                        {t('cancel')}
                                     </button>
                                     <button 
                                         type="submit" 
                                         className="flex-1 px-6 py-4 bg-brand-600 text-white font-black rounded-2xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-widest text-xs"
                                     >
                                         <Save size={18} />
-                                        Salva Obiettivo
+                                        {t('goals_save')}
                                     </button>
                                 </div>
                             </form>

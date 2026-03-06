@@ -7,6 +7,7 @@ import {
   BarChart3,
   StickyNote
 } from 'lucide-react';
+import { useLanguage } from '../App';
 
 export type View = 'tasks' | 'routines' | 'goals' | 'calendar' | 'analytics' | 'notes' | 'profile';
 
@@ -40,13 +41,14 @@ const NavItem: React.FC<{
 );
 
 const BottomNav: React.FC<BottomNavProps> = ({ currentView, onSetView }) => {
+  const { t } = useLanguage();
   const navItems: { view: View; label: string; icon: React.ReactNode }[] = [
-    { view: 'tasks', label: 'Attività', icon: <CheckSquare /> },
-    { view: 'routines', label: 'Routine', icon: <Repeat /> },
-    { view: 'goals', label: 'Obiettivi', icon: <Target /> },
-    { view: 'calendar', label: 'Calendario', icon: <Calendar /> },
-    { view: 'notes', label: 'Note', icon: <StickyNote /> },
-    { view: 'analytics', label: 'Analytics', icon: <BarChart3 /> },
+    { view: 'tasks', label: t('nav_tasks'), icon: <CheckSquare /> },
+    { view: 'routines', label: t('nav_routines'), icon: <Repeat /> },
+    { view: 'goals', label: t('nav_goals'), icon: <Target /> },
+    { view: 'calendar', label: t('nav_calendar'), icon: <Calendar /> },
+    { view: 'notes', label: t('nav_notes'), icon: <StickyNote /> },
+    { view: 'analytics', label: t('nav_analytics'), icon: <BarChart3 /> },
   ];
 
   return (
@@ -67,3 +69,4 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onSetView }) => {
 };
 
 export default BottomNav;
+
