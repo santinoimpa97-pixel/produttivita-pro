@@ -1,6 +1,7 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Target, Sparkles, LayoutGrid } from 'lucide-react';
 import { Goal, Task } from '../types';
-import { PlusIcon } from './icons/PlusIcon';
 import GoalItem from './GoalItem';
 import GoalModal from './GoalModal';
 import LinkTasksModal from './LinkTasksModal';
@@ -52,36 +53,60 @@ const GoalsView: React.FC<GoalsViewProps> = (props) => {
     }
 
     return (
-        <div className="space-y-6 animate-fade-in">
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg flex justify-between items-center">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">I tuoi Obiettivi</h2>
+        <div className="space-y-8">
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                        <Target className="text-brand-600" size={28} />
+                        I tuoi Obiettivi
+                    </h2>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Pianifica e monitora i tuoi traguardi a lungo termine.</p>
+                </div>
                 <button
                     onClick={handleOpenAddModal}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-600 text-white font-bold rounded-2xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 active:scale-[0.98] transition-all uppercase tracking-widest text-xs"
                 >
-                    <PlusIcon className="w-5 h-5" />
+                    <Plus size={18} strokeWidth={3} />
                     Nuovo Obiettivo
                 </button>
-            </div>
+            </header>
             
-            <div className="space-y-4">
-                {props.goals.length > 0 ? (
-                    props.goals.map(goal => (
-                        <GoalItem 
-                            key={goal.id}
-                            goal={goal}
-                            tasks={props.tasks}
-                            onEdit={handleEditGoal}
-                            onDelete={props.onDeleteGoal}
-                            onLinkTasks={handleLinkTasks}
-                            onToggleGoal={props.onToggleGoal}
-                        />
-                    ))
-                ) : (
-                    <div className="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-xl shadow-md">
-                        <p className="text-slate-500 dark:text-slate-400">Nessun obiettivo definito. Inizia a pianificare in grande!</p>
-                    </div>
-                )}
+            <div className="grid grid-cols-1 gap-6">
+                <AnimatePresence mode="popLayout">
+                    {props.goals.length > 0 ? (
+                        props.goals.map((goal, index) => (
+                            <motion.div
+                                key={goal.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                            >
+                                <GoalItem 
+                                    goal={goal}
+                                    tasks={props.tasks}
+                                    onEdit={handleEditGoal}
+                                    onDelete={props.onDeleteGoal}
+                                    onLinkTasks={handleLinkTasks}
+                                    onToggleGoal={props.onToggleGoal}
+                                />
+                            </motion.div>
+                        ))
+                    ) : (
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="text-center py-20 px-4 glass-card rounded-[2.5rem] border-dashed border-2 border-slate-200 dark:border-slate-800"
+                        >
+                            <div className="bg-slate-100 dark:bg-slate-800 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3">
+                                <Sparkles className="text-slate-400" size={40} />
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Punta in alto</h3>
+                            <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto font-medium">
+                                Non hai ancora definito degli obiettivi. Inizia a pianificare i tuoi successi futuri.
+                            </p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             <GoalModal 

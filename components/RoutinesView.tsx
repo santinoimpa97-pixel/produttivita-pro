@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Trash2, Sparkles, ChevronDown, Bookmark, RotateCcw, CheckCircle2, Circle, ListTodo, LayoutGrid } from 'lucide-react';
 import { Routine, RoutineTemplate, RoutineTask } from '../types';
-import { PlusIcon } from './icons/PlusIcon';
-import { TrashIcon } from './icons/TrashIcon';
-import { SparklesIcon } from './icons/SparklesIcon';
-import { ChevronDownIcon } from './icons/ChevronDownIcon';
-import { BookmarkIcon } from './icons/BookmarkIcon';
-import { RoutineIcon } from './icons/RoutineIcon';
 
 interface RoutinesViewProps {
     routines: Routine[];
@@ -46,68 +42,119 @@ const RoutineItem: React.FC<{
     }
     
     const hasCompletedTasks = routine.tasks.some(t => t.completed);
+    const completedCount = routine.tasks.filter(t => t.completed).length;
+    const progress = routine.tasks.length > 0 ? (completedCount / routine.tasks.length) * 100 : 0;
 
     return (
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between">
-                <div className="flex-grow">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{routine.name}</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{routine.tasks.length} compiti</p>
+        <div className="glass-card rounded-[2rem] border border-slate-100 dark:border-slate-800/50 overflow-hidden transition-all group">
+            <div className="p-6">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <h3 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">{routine.name}</h3>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">{routine.tasks.length} compiti</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">{Math.round(progress)}% completato</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-xl">
+                        <button onClick={() => onSave(routine.id)} title="Salva come modello" className="p-2 text-slate-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-all"><Bookmark size={18} /></button>
+                        <button onClick={() => onDelete(routine.id)} title="Elimina" className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"><Trash2 size={18} /></button>
+                        <button 
+                            onClick={() => setIsExpanded(!isExpanded)} 
+                            className={`p-2 text-slate-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-all ${isExpanded ? 'rotate-180 text-brand-600 bg-brand-50 dark:bg-brand-900/20' : ''}`}
+                        >
+                            <ChevronDown size={18} />
+                        </button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => onSave(routine.id)} title="Salva come modello" className="p-2 text-slate-500 hover:text-violet-500 dark:hover:text-violet-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><BookmarkIcon /></button>
-                    <button onClick={() => onDelete(routine.id)} className="p-2 text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><TrashIcon /></button>
-                    <button onClick={() => setIsExpanded(!isExpanded)} className="p-2 text-slate-500 hover:text-violet-500 dark:hover:text-violet-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-                        <ChevronDownIcon className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                    </button>
+
+                <div className="mt-4 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        className="h-full bg-brand-600 rounded-full"
+                    />
                 </div>
             </div>
-            {isExpanded && (
-                <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
-                    {routine.tasks.length > 0 && (
-                        <div className="flex justify-end">
-                             <button
-                                onClick={() => onReset(routine.id)}
-                                disabled={!hasCompletedTasks}
-                                className="flex items-center gap-1 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline disabled:text-slate-500 disabled:no-underline disabled:cursor-not-allowed"
-                            >
-                                <RoutineIcon className="w-4 h-4" />
-                                <span>Resetta Completamento</span>
-                            </button>
-                        </div>
-                    )}
-                    {routine.tasks.map(task => (
-                        <div key={task.id} className="flex items-center justify-between p-2 rounded-md group hover:bg-slate-100 dark:hover:bg-slate-800/50">
-                            <div className="flex items-center gap-3 flex-grow">
-                                <input
-                                    type="checkbox"
-                                    checked={task.completed}
-                                    onChange={() => onToggleTask(routine.id, task.id)}
-                                    className="h-5 w-5 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
-                                    id={`routine-task-${task.id}`}
-                                />
-                                <label
-                                    htmlFor={`routine-task-${task.id}`}
-                                    className={`flex-grow cursor-pointer text-slate-700 dark:text-slate-300 ${task.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}
-                                >
-                                    {task.text}
-                                </label>
+
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="border-t border-slate-50 dark:border-slate-800/50 bg-slate-50/30 dark:bg-slate-900/20"
+                    >
+                        <div className="p-6 space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Lista Compiti</h4>
+                                {routine.tasks.length > 0 && (
+                                    <button
+                                        onClick={() => onReset(routine.id)}
+                                        disabled={!hasCompletedTasks}
+                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-600 dark:text-brand-400 hover:underline disabled:text-slate-400 disabled:no-underline disabled:cursor-not-allowed transition-all"
+                                    >
+                                        <RotateCcw size={12} />
+                                        Resetta
+                                    </button>
+                                )}
                             </div>
-                            <button onClick={() => onDeleteTask(routine.id, task.id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <TrashIcon className="w-4 h-4"/>
+
+                            <div className="space-y-2">
+                                {routine.tasks.map(task => (
+                                    <div key={task.id} className="flex items-center justify-between p-3 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group/task hover:shadow-md transition-all">
+                                        <div className="flex items-center gap-3 flex-grow">
+                                            <button 
+                                                onClick={() => onToggleTask(routine.id, task.id)}
+                                                className={`transition-all ${task.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-brand-500'}`}
+                                            >
+                                                {task.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                                            </button>
+                                            <span className={`text-sm font-medium transition-all ${task.completed ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200'}`}>
+                                                {task.text}
+                                            </span>
+                                        </div>
+                                        <button onClick={() => onDeleteTask(routine.id, task.id)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover/task:opacity-100 transition-all">
+                                            <Trash2 size={14}/>
+                                        </button>
+                                    </div>
+                                ))}
+                                {routine.tasks.length === 0 && (
+                                    <div className="text-center py-8 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                                        <p className="text-xs font-medium text-slate-400 italic">Nessun compito aggiunto.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <form onSubmit={handleAddTask} className="flex items-center gap-2 pt-2">
+                                <input 
+                                    type="text" 
+                                    value={newTaskText} 
+                                    onChange={e => setNewTaskText(e.target.value)} 
+                                    placeholder="Aggiungi compito..." 
+                                    className="flex-grow px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-transparent focus:border-brand-500 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none transition-all"
+                                />
+                                <button type="submit" className="p-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 transition-all active:scale-95">
+                                    <Plus size={20} strokeWidth={3} />
+                                </button>
+                            </form>
+
+                            <button 
+                                onClick={() => onGenerate(routine.id, routine.name)} 
+                                disabled={isGenerating} 
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 font-bold rounded-2xl hover:bg-brand-100 dark:hover:bg-brand-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all uppercase tracking-widest text-[10px]"
+                            >
+                                {isGenerating ? (
+                                    <>Generazione in corso...</>
+                                ) : (
+                                    <><Sparkles size={16} className="text-brand-500" /> Genera Compiti con IA</>
+                                )}
                             </button>
                         </div>
-                    ))}
-                    {routine.tasks.length === 0 && <p className="text-sm text-slate-400 italic">Nessun compito in questa routine.</p>}
-                    <form onSubmit={handleAddTask} className="flex items-center gap-2 pt-2">
-                        <input type="text" value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="Nuovo compito..." className="flex-grow px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:ring-1 focus:ring-violet-500"/>
-                        <button type="submit" className="p-1.5 text-slate-500 hover:text-violet-600 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600"><PlusIcon className="w-5 h-5"/></button>
-                    </form>
-                    <button onClick={() => onGenerate(routine.id, routine.name)} disabled={isGenerating} className="w-full mt-3 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-violet-50 text-violet-700 font-semibold rounded-lg hover:bg-violet-100 dark:bg-violet-900/50 dark:text-violet-300 dark:hover:bg-violet-900 disabled:opacity-50 disabled:cursor-not-allowed transition">
-                        {isGenerating ? 'Generazione...' : <><SparklesIcon className="w-5 h-5"/> Genera Compiti con IA</>}
-                    </button>
-                </div>
-            )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -118,15 +165,15 @@ const TemplateItem: React.FC<{
     onDelete: (templateId: string) => void;
 }> = ({ template, onCreate, onDelete }) => {
     return (
-        <div className="bg-slate-100 dark:bg-slate-900 p-4 rounded-xl shadow-sm">
-            <div className="flex items-start justify-between">
-                <div>
-                    <h4 className="font-bold text-slate-700 dark:text-slate-200">{template.name}</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{template.tasks.length} compiti</p>
+        <div className="glass-card p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 hover:shadow-lg transition-all group">
+            <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                    <h4 className="font-bold text-slate-900 dark:text-white">{template.name}</h4>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">{template.tasks.length} compiti predefiniti</p>
                 </div>
                 <div className="flex items-center gap-1">
-                    <button onClick={() => onCreate(template.id)} title="Crea routine da questo modello" className="p-2 text-white bg-violet-600 hover:bg-violet-700 rounded-full transition"><PlusIcon className="w-4 h-4"/></button>
-                    <button onClick={() => onDelete(template.id)} className="p-2 text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition"><TrashIcon className="w-4 h-4"/></button>
+                    <button onClick={() => onCreate(template.id)} title="Crea routine" className="p-2.5 text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-lg shadow-brand-500/20 transition-all active:scale-95"><Plus size={16} strokeWidth={3} /></button>
+                    <button onClick={() => onDelete(template.id)} title="Elimina modello" className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><Trash2 size={16} /></button>
                 </div>
             </div>
         </div>
@@ -145,41 +192,89 @@ const RoutinesView: React.FC<RoutinesViewProps> = (props) => {
     };
 
     return (
-    <div className="space-y-8 animate-fade-in">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Crea Nuova Routine</h2>
-            <form onSubmit={handleAddRoutine} className="flex items-center gap-2">
-                <input type="text" value={newRoutineName} onChange={e => setNewRoutineName(e.target.value)} placeholder="Es. Routine Mattutina" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500" required/>
-                <button type="submit" className="px-4 py-2 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700"><PlusIcon className="w-5 h-5"/></button>
-            </form>
-        </div>
+    <div className="space-y-10">
+        <section className="space-y-4">
+            <div className="space-y-1">
+                <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                    <RotateCcw className="text-brand-600" size={28} />
+                    Routine
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Automatizza le tue abitudini quotidiane.</p>
+            </div>
+            
+            <div className="glass-card p-6 rounded-[2.5rem] shadow-xl shadow-brand-500/5">
+                <form onSubmit={handleAddRoutine} className="flex items-center gap-3">
+                    <div className="flex-grow relative group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
+                            <ListTodo size={18} />
+                        </div>
+                        <input 
+                            type="text" 
+                            value={newRoutineName} 
+                            onChange={e => setNewRoutineName(e.target.value)} 
+                            placeholder="Es. Routine Mattutina, Allenamento..." 
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all" 
+                            required
+                        />
+                    </div>
+                    <button type="submit" className="px-6 py-3 bg-brand-600 text-white font-bold rounded-2xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs">
+                        Crea
+                    </button>
+                </form>
+            </div>
+        </section>
 
-        <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Le tue Routine</h2>
-            {props.routines.length > 0 ? (
-                props.routines.map(routine => 
-                    <RoutineItem 
-                        key={routine.id}
-                        routine={routine}
-                        onDelete={props.onDeleteRoutine}
-                        onAddTask={props.onAddRoutineTask}
-                        onDeleteTask={props.onDeleteRoutineTask}
-                        onToggleTask={props.onToggleRoutineTask}
-                        onReset={props.onResetRoutine}
-                        onGenerate={props.onGenerateTasks}
-                        isGenerating={props.generatingRoutineId === routine.id}
-                        onSave={props.onSaveAsTemplate}
-                    />)
-            ) : (
-                <div className="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-xl shadow-md">
-                    <p className="text-slate-500 dark:text-slate-400">Nessuna routine creata. Aggiungine una per iniziare!</p>
+        <section className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Le tue Routine</h3>
+                <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-black px-2 py-0.5 rounded-full">{props.routines.length}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-6">
+                <AnimatePresence mode="popLayout">
+                    {props.routines.length > 0 ? (
+                        props.routines.map((routine, index) => 
+                            <motion.div
+                                key={routine.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                            >
+                                <RoutineItem 
+                                    routine={routine}
+                                    onDelete={props.onDeleteRoutine}
+                                    onAddTask={props.onAddRoutineTask}
+                                    onDeleteTask={props.onDeleteRoutineTask}
+                                    onToggleTask={props.onToggleRoutineTask}
+                                    onReset={props.onResetRoutine}
+                                    onGenerate={props.onGenerateTasks}
+                                    isGenerating={props.generatingRoutineId === routine.id}
+                                    onSave={props.onSaveAsTemplate}
+                                />
+                            </motion.div>
+                        )
+                    ) : (
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-center py-16 px-4 glass-card rounded-[2.5rem] border-dashed border-2 border-slate-200 dark:border-slate-800"
+                        >
+                            <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <RotateCcw className="text-slate-400" size={32} />
+                            </div>
+                            <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Nessuna routine</h4>
+                            <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto text-sm font-medium">Crea una routine per gestire i tuoi compiti ricorrenti in modo efficiente.</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </section>
+
+        {props.templates.length > 0 && (
+            <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Modelli Salvati</h3>
+                    <LayoutGrid size={16} className="text-slate-400" />
                 </div>
-            )}
-        </div>
-
-        <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Modelli Salvati</h2>
-            {props.templates.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {props.templates.map(template => 
                         <TemplateItem 
@@ -190,12 +285,8 @@ const RoutinesView: React.FC<RoutinesViewProps> = (props) => {
                         />
                     )}
                 </div>
-            ) : (
-                 <div className="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-xl shadow-md">
-                    <p className="text-slate-500 dark:text-slate-400">Nessun modello. Salva una routine come modello per riutilizzarla.</p>
-                </div>
-            )}
-        </div>
+            </section>
+        )}
     </div>
   );
 };

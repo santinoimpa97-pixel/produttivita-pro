@@ -1,8 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 // --- CONFIGURAZIONE PER L'AMBIENTE DI SVILUPPO (AI Studio) ---
-// La chiave API è inserita direttamente per far funzionare l'app qui.
-const apiKey = 'AIzaSyBxNxdh6eQ6HjhC97UYuyuxcGQfIiYjjeQ';
+const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
     throw new Error("La chiave API di Gemini è mancante.");
@@ -17,7 +16,7 @@ const ai = new GoogleGenAI({ apiKey });
 export const generateMotivationalQuote = async (): Promise<string> => {
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             contents: "Genera una frase motivazionale concisa e potente, adatta per un'app di produttività. La frase deve essere in italiano. Fornisci la risposta in formato JSON con una singola chiave 'quote'.",
             config: {
                 responseMimeType: "application/json",
@@ -64,7 +63,7 @@ export const generateMotivationalQuote = async (): Promise<string> => {
 export const generateSubtasksFromGemini = async (taskText: string): Promise<string[]> => {
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash", 
+      model: "gemini-3-flash-preview", 
       contents: `Dato il task principale "${taskText}", suddividilo in una lista di sotto-task più piccoli e gestibili. Fornisci la risposta in formato JSON con un array di stringhe chiamato "subtasks".`,
       config: {
         responseMimeType: "application/json",
@@ -115,7 +114,7 @@ export const generateSubtasksFromGemini = async (taskText: string): Promise<stri
 export const generateRoutineTasks = async (routineName: string): Promise<string[]> => {
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: `Data una routine chiamata "${routineName}", suggerisci una lista di compiti tipici per questa routine. Fornisci la risposta in formato JSON con un array di stringhe chiamato "tasks".`,
       config: {
         responseMimeType: "application/json",

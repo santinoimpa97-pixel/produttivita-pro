@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Task,
   SubTask,
@@ -10,6 +11,7 @@ import {
   RoutineTemplate,
   Appointment,
   Goal,
+  Note,
 } from './types';
 import Header from './components/Header';
 import AuthView from './components/AuthView';
@@ -18,6 +20,7 @@ import RoutinesView from './components/RoutinesView';
 import GoalsView from './components/GoalsView';
 import CalendarView from './components/CalendarView';
 import AnalyticsView from './components/AnalyticsView';
+import NotesView from './components/NotesView';
 import ProfileView from './components/ProfileView';
 import BottomNav, { View } from './components/BottomNav';
 import { supabase } from './supabaseClient';
@@ -50,6 +53,7 @@ function App() {
   const [templates, setTemplates] = useState<RoutineTemplate[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   
   // AI Loading States
   const [generatingTaskId, setGeneratingTaskId] = useState<string | null>(null);
@@ -93,7 +97,7 @@ function App() {
     setDataLoading(true);
     setDataError(null);
     try {
-        const [tasksRes, subTasksRes, routinesRes, routineTasksRes, templatesRes, appointmentsRes, goalsRes] = await Promise.all([
+        const [tasksRes, subTasksRes, routinesRes, routineTasksRes, templatesRes, appointmentsRes, goalsRes, notesRes] = await Promise.all([
             supabase.from('tasks').select('*').eq('user_id', userId),
             supabase.from('sub_tasks').select('*').eq('user_id', userId),
             supabase.from('routines').select('*').eq('user_id', userId),
@@ -101,9 +105,10 @@ function App() {
             supabase.from('routine_templates').select('*').eq('user_id', userId),
             supabase.from('appointments').select('*').eq('user_id', userId),
             supabase.from('goals').select('*').eq('user_id', userId),
+            supabase.from('notes').select('*').eq('user_id', userId),
         ]);
 
-        const results = [tasksRes, subTasksRes, routinesRes, routineTasksRes, templatesRes, appointmentsRes, goalsRes];
+        const results = [tasksRes, subTasksRes, routinesRes, routineTasksRes, templatesRes, appointmentsRes, goalsRes, notesRes];
         const failedResult = results.find(res => res.error);
         if (failedResult) throw failedResult.error;
         
@@ -127,6 +132,7 @@ function App() {
         setTemplates(templatesRes.data?.map((t: any) => ({ ...t, tasks: t.tasks || [] })) || []);
         setAppointments(appointmentsRes.data || []);
         setGoals(goalsRes.data?.map((g: any) => ({ ...g, targetDate: g.target_date, linkedTaskIds: g.linked_task_ids || [] })) || []);
+        setNotes(notesRes.data?.map((n: any) => ({ ...n, updatedAt: n.updated_at })) || []);
 
     } catch (error: any) {
         console.error("Error fetching data:", error.message);
@@ -147,6 +153,7 @@ function App() {
       setTemplates([]);
       setAppointments([]);
       setGoals([]);
+      setNotes([]);
     }
   }, [user?.id, fetchData]);
   
@@ -593,6 +600,41 @@ function App() {
           setGoals(goals.map(g => g.id === goalId ? { ...g, linkedTaskIds: goal.linkedTaskIds } : g));
       }
   };
+
+  // Note Handlers
+  const handleAddNote = async (title: string, content: string) => {
+      if (!user) return;
+      const newNote: Note = { id: newId(), title, content, updatedAt: new Date().toISOString() };
+      setNotes(prev => [newNote, ...prev]);
+      const { error } = await supabase.from('notes').insert({ id: newNote.id, user_id: user.id, title, content, updated_at: newNote.updatedAt });
+      if (error) {
+          console.error("Failed to add note:", error.message);
+          setNotes(prev => prev.filter(n => n.id !== newNote.id));
+      }
+  };
+
+  const handleUpdateNote = async (id: string, title: string, content: string) => {
+      if (!user) return;
+      const updatedAt = new Date().toISOString();
+      const oldNotes = notes;
+      setNotes(notes.map(n => n.id === id ? { ...n, title, content, updatedAt } : n));
+      const { error } = await supabase.from('notes').update({ title, content, updated_at: updatedAt }).eq('user_id', user.id).eq('id', id);
+      if (error) {
+          console.error("Failed to update note:", error.message);
+          setNotes(oldNotes);
+      }
+  };
+
+  const handleDeleteNote = async (id: string) => {
+      if (!user) return;
+      const oldNotes = notes;
+      setNotes(notes.filter(n => n.id !== id));
+      const { error } = await supabase.from('notes').delete().eq('user_id', user.id).eq('id', id);
+      if (error) {
+          console.error("Failed to delete note:", error.message);
+          setNotes(oldNotes);
+      }
+  };
   
   // Memoized View
   const currentViewComponent = useMemo(() => {
@@ -645,6 +687,13 @@ function App() {
             />;
         case 'analytics':
             return <AnalyticsView tasks={tasks} />;
+        case 'notes':
+            return <NotesView 
+                notes={notes}
+                onAddNote={handleAddNote}
+                onUpdateNote={handleUpdateNote}
+                onDeleteNote={handleDeleteNote}
+            />;
         case 'profile':
             return user ? <ProfileView user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : null;
         default:
@@ -685,7 +734,7 @@ function App() {
   }
 
   return (
-    <div className="bg-slate-100 dark:bg-[#020617] min-h-screen font-sans">
+    <div className="bg-slate-50 dark:bg-[#020617] min-h-screen font-sans selection:bg-brand-100 selection:text-brand-900">
       <Header 
         user={user} 
         onLogout={handleLogout} 
@@ -694,8 +743,18 @@ function App() {
         onSetView={setView} 
         subtitle={subtitle} 
       />
-      <main className="max-w-4xl mx-auto p-4 pb-24 md:pb-4">
-        {renderMainContent()}
+      <main className="max-w-4xl mx-auto p-4 pb-24 md:pb-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={view}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+          >
+            {renderMainContent()}
+          </motion.div>
+        </AnimatePresence>
       </main>
       <BottomNav currentView={view} onSetView={setView} />
     </div>

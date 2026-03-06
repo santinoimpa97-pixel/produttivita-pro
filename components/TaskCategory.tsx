@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import { Task } from '../types';
 import TaskList from './TaskList';
-import { ChevronDownIcon } from './icons/ChevronDownIcon';
 import type { TaskListProps } from './TaskList';
 
 type TaskCategoryProps = Omit<TaskListProps, 'tasks'> & {
@@ -19,24 +20,37 @@ const TaskCategory: React.FC<TaskCategoryProps> = ({ title, tasks, defaultOpen =
     }
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg overflow-hidden">
+        <div className="glass-card rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-800/50">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex justify-between items-center p-4 text-left"
+                className="w-full flex justify-between items-center p-5 text-left hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors group"
             >
                 <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{title}</h3>
-                    <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold px-2 py-0.5 rounded-full">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">{title}</h3>
+                    <span className="bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 text-[10px] font-black px-2 py-0.5 rounded-full">
                         {tasks.length}
                     </span>
                 </div>
-                <ChevronDownIcon className={`w-5 h-5 text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isOpen && (
-                <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-                    <TaskList tasks={tasks} {...taskListProps} />
+                <div className={`p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 transition-all duration-300 group-hover:text-brand-600 ${isOpen ? 'rotate-180 bg-brand-50 dark:bg-brand-900/20 text-brand-600' : ''}`}>
+                    <ChevronDown size={18} />
                 </div>
-            )}
+            </button>
+            <AnimatePresence initial={false}>
+                {isOpen && (
+                    <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+                    >
+                        <div className="p-5 pt-0 border-t border-slate-50 dark:border-slate-800/50">
+                            <div className="mt-4">
+                                <TaskList tasks={tasks} {...taskListProps} />
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

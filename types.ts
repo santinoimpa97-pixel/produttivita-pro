@@ -58,3 +58,10 @@ export interface Goal {
     completed: boolean;
     linkedTaskIds: string[];
 }
+
+export interface Note {
+    id: string;
+    title: string;
+    content: string;
+    updatedAt: string;
+}

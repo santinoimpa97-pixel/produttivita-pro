@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Plus, Filter, Calendar, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { Task, Priority } from '../types';
 import TaskInput from './TaskInput';
 import TaskList from './TaskList';
@@ -23,11 +25,11 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const today = new Date();
-  today.setHours(23, 59, 59, 999); // End of today
+  today.setHours(23, 59, 59, 999);
 
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  yesterday.setHours(23, 59, 59, 999); // End of yesterday
+  yesterday.setHours(23, 59, 59, 999);
 
   const searchedTasks = tasks.filter(task => 
     task.text.toLowerCase().includes(searchTerm.toLowerCase())
@@ -51,35 +53,81 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
   
   const completedTasks = searchedTasks.filter((task) => task.completed);
 
-
   return (
-    <div className="space-y-6 animate-fade-in">
-      <TaskInput onAddTask={onAddTask} />
+    <div className="space-y-8">
+      <section>
+        <TaskInput onAddTask={onAddTask} />
+      </section>
 
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
-        <input
-            type="text"
-            placeholder="Cerca in tutte le attività..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 mb-4"
-        />
-      </div>
+      <section className="relative">
+        <div className="glass-card p-2 rounded-2xl flex items-center gap-2 group focus-within:ring-2 focus-within:ring-brand-500 transition-all">
+          <div className="pl-3 text-slate-400">
+            <Search size={20} />
+          </div>
+          <input
+              type="text"
+              placeholder="Cerca tra le tue attività..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-2 py-2 bg-transparent text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none font-medium"
+          />
+          {searchTerm && (
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="pr-3 text-xs font-bold text-brand-600 uppercase tracking-widest"
+            >
+              Cancella
+            </button>
+          )}
+        </div>
+      </section>
 
-      <div className="space-y-4">
-        <TaskCategory title="In Scadenza" tasks={overdueTasks} {...taskListProps} defaultOpen={true} />
-        <TaskCategory title="Oggi" tasks={todayTasks} {...taskListProps} defaultOpen={true} />
-        <TaskCategory title="Prossimamente" tasks={upcomingTasks} {...taskListProps} />
-        <TaskCategory title="Senza Scadenza" tasks={noDueDateTasks} {...taskListProps} />
-        <TaskCategory title="Completate" tasks={completedTasks} {...taskListProps} />
+      <div className="space-y-6">
+        <AnimatePresence mode="popLayout">
+          {overdueTasks.length > 0 && (
+            <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <TaskCategory title="In Ritardo" tasks={overdueTasks} {...taskListProps} defaultOpen={true} />
+            </motion.div>
+          )}
+          
+          <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <TaskCategory title="Oggi" tasks={todayTasks} {...taskListProps} defaultOpen={true} />
+          </motion.div>
+
+          {upcomingTasks.length > 0 && (
+            <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <TaskCategory title="Prossimamente" tasks={upcomingTasks} {...taskListProps} />
+            </motion.div>
+          )}
+
+          {noDueDateTasks.length > 0 && (
+            <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <TaskCategory title="Senza Scadenza" tasks={noDueDateTasks} {...taskListProps} />
+            </motion.div>
+          )}
+
+          {completedTasks.length > 0 && (
+            <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <TaskCategory title="Completate" tasks={completedTasks} {...taskListProps} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {tasks.length === 0 && (
-        <div className="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-xl shadow-md">
-            <p className="text-slate-500 dark:text-slate-400 mb-2">
-              Nessuna attività ancora. Aggiungine una per iniziare!
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-16 px-4 glass-card rounded-3xl border-dashed border-2 border-slate-200 dark:border-slate-800"
+        >
+            <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Plus className="text-slate-400" size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Inizia ora</h3>
+            <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+              Non hai ancora aggiunto nessuna attività. Crea la tua prima task per iniziare a organizzare la giornata.
             </p>
-        </div>
+        </motion.div>
       )}
     </div>
   );

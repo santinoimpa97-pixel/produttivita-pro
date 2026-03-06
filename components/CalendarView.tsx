@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Trash2, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Bell } from 'lucide-react';
 import { Appointment } from '../types';
-import { PlusIcon } from './icons/PlusIcon';
-import { TrashIcon } from './icons/TrashIcon';
-import { ClockIcon } from './icons/ClockIcon';
 
 interface CalendarViewProps {
     appointments: Appointment[];
@@ -10,15 +9,12 @@ interface CalendarViewProps {
     onDeleteAppointment: (id: string) => void;
 }
 
-
-// Helper function to get a YYYY-MM-DD string from a Date object in the local timezone
 const toLocalISOString = (date: Date): string => {
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
 };
-
 
 const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointment, onDeleteAppointment }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -37,27 +33,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
         return days;
     }, [currentDate, lastDayOfMonth]);
     
-    // Sunday is 0, Monday is 1, etc.
     const startingDayOfWeek = firstDayOfMonth.getDay(); 
 
     const allAppointmentsByDate = useMemo(() => {
         const events: Record<string, Appointment[]> = {};
-
         appointments.forEach(app => {
             (events[app.date] = events[app.date] || []).push(app);
         });
-        
-        // Sort events within each day by time
         for (const date in events) {
             events[date].sort((a, b) => a.time.localeCompare(b.time));
         }
-
         return events;
     }, [appointments]);
     
     const upcomingAppointments = useMemo(() => {
         const todayStr = toLocalISOString(new Date());
-        
         return appointments
             .filter(app => app.date >= todayStr)
             .sort((a, b) => {
@@ -66,7 +56,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                 return dateA.getTime() - dateB.getTime();
             });
     }, [appointments]);
-
 
     const handleAddAppointment = (e: React.FormEvent) => {
         e.preventDefault();
@@ -84,99 +73,161 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1));
     };
 
-    const weekDays = ['Do', 'Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa'];
+    const weekDays = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
     
     return (
-        <div className="space-y-6 animate-fade-in">
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Aggiungi Appuntamento</h2>
-                <form onSubmit={handleAddAppointment} className="space-y-4">
-                    <input type="text" value={newAppointmentText} onChange={e => setNewAppointmentText(e.target.value)} placeholder="Descrizione appuntamento" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500" required />
-                    <div className="flex gap-4">
-                        <input type="date" value={newAppointmentDate} onChange={e => setNewAppointmentDate(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500" required />
-                        <input type="time" value={newAppointmentTime} onChange={e => setNewAppointmentTime(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500" required />
-                    </div>
-                    <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700">
-                        <PlusIcon className="w-5 h-5"/> Aggiungi
-                    </button>
-                </form>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
-                <div className="flex justify-between items-center mb-4">
-                    <button onClick={() => changeMonth(-1)} className="px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600">&lt;</button>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 capitalize">
-                        {currentDate.toLocaleString('it-IT', { month: 'long', year: 'numeric' })}
+        <div className="space-y-10">
+            <section className="space-y-4">
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                        <CalendarIcon className="text-brand-600" size={28} />
+                        Calendario
                     </h2>
-                    <button onClick={() => changeMonth(1)} className="px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600">&gt;</button>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Gestisci i tuoi appuntamenti e scadenze.</p>
+                </div>
+
+                <div className="glass-card p-6 rounded-[2.5rem] shadow-xl shadow-brand-500/5">
+                    <form onSubmit={handleAddAppointment} className="space-y-4">
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
+                                <Bell size={18} />
+                            </div>
+                            <input 
+                                type="text" 
+                                value={newAppointmentText} 
+                                onChange={e => setNewAppointmentText(e.target.value)} 
+                                placeholder="Cosa hai in programma?" 
+                                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all" 
+                                required 
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input 
+                                type="date" 
+                                value={newAppointmentDate} 
+                                onChange={e => setNewAppointmentDate(e.target.value)} 
+                                className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all" 
+                                required 
+                            />
+                            <input 
+                                type="time" 
+                                value={newAppointmentTime} 
+                                onChange={e => setNewAppointmentTime(e.target.value)} 
+                                className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all" 
+                                required 
+                            />
+                        </div>
+                        <button type="submit" className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-brand-600 text-white font-black rounded-2xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98] uppercase tracking-widest text-xs">
+                            <Plus size={20} strokeWidth={3} /> Aggiungi Appuntamento
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <section className="glass-card p-6 rounded-[2.5rem] shadow-xl shadow-brand-500/5 overflow-hidden">
+                <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white capitalize">
+                        {currentDate.toLocaleString('it-IT', { month: 'long', year: 'numeric' })}
+                    </h3>
+                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                        <button onClick={() => changeMonth(-1)} className="p-2 text-slate-500 hover:text-brand-600 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all"><ChevronLeft size={20} /></button>
+                        <button onClick={() => changeMonth(1)} className="p-2 text-slate-500 hover:text-brand-600 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all"><ChevronRight size={20} /></button>
+                    </div>
                 </div>
                 
-                {/* Responsive Grid View */}
-                <div>
-                    <div className="grid grid-cols-7 gap-1 text-center font-semibold text-slate-500 dark:text-slate-400 text-xs md:text-sm">
-                        {weekDays.map(day => <div key={day}>{day}</div>)}
-                    </div>
-                    <div className="grid grid-cols-7 gap-1 mt-2">
-                        {Array(startingDayOfWeek).fill(null).map((_, index) => <div key={`empty-${index}`} className="border rounded-md border-transparent"></div>)}
-                        {daysInMonth.map(day => {
-                            const dateStr = toLocalISOString(day);
-                            const dayAppointments = allAppointmentsByDate[dateStr] || [];
-                            const isToday = toLocalISOString(new Date()) === dateStr;
-                            return (
-                                <div key={day.toString()} className={`p-1 md:p-2 border rounded-md min-h-[80px] md:min-h-[100px] text-left align-top transition-colors ${isToday ? 'bg-violet-100 dark:bg-violet-900/50 border-violet-300 dark:border-violet-700' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'}`}>
-                                    <span className={`text-sm md:text-base font-bold ${isToday ? 'text-violet-600 dark:text-violet-300' : 'text-slate-700 dark:text-slate-300'}`}>{day.getDate()}</span>
-                                    <div className="mt-1 space-y-1">
-                                        {dayAppointments.map(appointment => (
-                                             <div key={appointment.id} className="text-xs p-1 rounded-md flex items-start gap-1 group bg-violet-200 dark:bg-violet-900 text-violet-800 dark:text-violet-200">
-                                                <ClockIcon className="w-3 h-3 mt-0.5 flex-shrink-0"/>
-                                                <span className="flex-grow truncate">
-                                                    {appointment.text}
-                                                </span>
-                                                <button onClick={() => onDeleteAppointment(appointment.id)} className="opacity-0 group-hover:opacity-100 hover:text-red-500 flex-shrink-0">
-                                                    <TrashIcon className="w-3 h-3"/>
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
+                <div className="grid grid-cols-7 gap-2 text-center mb-4">
+                    {weekDays.map(day => (
+                        <div key={day} className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                            {day}
+                        </div>
+                    ))}
                 </div>
-            </div>
-            
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Prossimi Appuntamenti</h2>
-                <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                    {upcomingAppointments.length > 0 ? (
-                        upcomingAppointments.map(appointment => (
-                             <div key={appointment.id} className="flex items-center gap-4 p-3 bg-slate-100 dark:bg-slate-700/50 rounded-lg group">
-                                <div className="flex-shrink-0 text-center">
-                                    <p className="font-bold text-slate-800 dark:text-slate-100">
-                                        {new Date(appointment.date).toLocaleDateString('it-IT', { timeZone: 'UTC', day: '2-digit' })}
-                                    </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
-                                        {new Date(appointment.date).toLocaleDateString('it-IT', { timeZone: 'UTC', month: 'short' })}
-                                    </p>
-                                </div>
-                                <div className="border-l-2 border-violet-500 pl-4 flex-grow">
-                                    <p className="font-semibold text-slate-800 dark:text-slate-200">{appointment.text}</p>
-                                    <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
-                                        <ClockIcon className="w-4 h-4" />
-                                        <span>{appointment.time.substring(0, 5)}</span>
-                                    </div>
-                                </div>
-                                <button onClick={() => onDeleteAppointment(appointment.id)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <TrashIcon />
-                                </button>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-center text-slate-500 dark:text-slate-400 py-4">Nessun appuntamento in programma.</p>
-                    )}
-                </div>
-            </div>
 
+                <div className="grid grid-cols-7 gap-2">
+                    {Array(startingDayOfWeek).fill(null).map((_, index) => (
+                        <div key={`empty-start-${index}`} className="aspect-square rounded-2xl bg-slate-50/30 dark:bg-slate-900/10"></div>
+                    ))}
+                    {daysInMonth.map(day => {
+                        const dateStr = toLocalISOString(day);
+                        const dayAppointments = allAppointmentsByDate[dateStr] || [];
+                        const isToday = toLocalISOString(new Date()) === dateStr;
+                        return (
+                            <div 
+                                key={day.toString()} 
+                                className={`aspect-square p-2 rounded-2xl border-2 transition-all relative group/day ${
+                                    isToday 
+                                    ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800' 
+                                    : 'bg-slate-50 dark:bg-slate-800/50 border-transparent hover:border-slate-200 dark:hover:border-slate-700'
+                                }`}
+                            >
+                                <span className={`text-sm font-black ${isToday ? 'text-brand-600 dark:text-brand-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                                    {day.getDate()}
+                                </span>
+                                {dayAppointments.length > 0 && (
+                                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-0.5">
+                                        {dayAppointments.slice(0, 3).map((app, appIndex) => (
+                                            <div key={`${app.id}-${appIndex}`} className="w-1.5 h-1.5 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(var(--brand-500-rgb),0.5)]" />
+                                        ))}
+                                        {dayAppointments.length > 3 && (
+                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
+                                        )}
+                                    </div>
+                                )}
+                                
+                                {/* Tooltip-like popover on hover for mobile/desktop could be added here */}
+                            </div>
+                        )
+                    })}
+                </div>
+            </section>
+            
+            <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Prossimi Appuntamenti</h3>
+                    <Clock size={16} className="text-slate-400" />
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                    <AnimatePresence mode="popLayout">
+                        {upcomingAppointments.length > 0 ? (
+                            upcomingAppointments.map((appointment, index) => (
+                                <motion.div 
+                                    key={appointment.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                    className="glass-card p-5 rounded-3xl border border-slate-100 dark:border-slate-800/50 flex items-center gap-6 group"
+                                >
+                                    <div className="flex-shrink-0 w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex flex-col items-center justify-center border border-slate-100 dark:border-slate-700">
+                                        <span className="text-xl font-black text-slate-900 dark:text-white">
+                                            {new Date(appointment.date).toLocaleDateString('it-IT', { timeZone: 'UTC', day: '2-digit' })}
+                                        </span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-600 dark:text-brand-400">
+                                            {new Date(appointment.date).toLocaleDateString('it-IT', { timeZone: 'UTC', month: 'short' })}
+                                        </span>
+                                    </div>
+                                    <div className="flex-grow space-y-1">
+                                        <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{appointment.text}</h4>
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500">
+                                            <Clock size={14} className="text-brand-500" />
+                                            <span>{appointment.time.substring(0, 5)}</span>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => onDeleteAppointment(appointment.id)} 
+                                        className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </motion.div>
+                            ))
+                        ) : (
+                            <div className="text-center py-12 glass-card rounded-[2.5rem] border-dashed border-2 border-slate-200 dark:border-slate-800">
+                                <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Nessun appuntamento in programma.</p>
+                            </div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </section>
         </div>
     );
 };

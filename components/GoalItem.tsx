@@ -1,8 +1,7 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { Pencil, Trash2, Link2, Calendar, CheckCircle2, Circle, Target } from 'lucide-react';
 import { Goal, Task } from '../types';
-import { PencilIcon } from './icons/PencilIcon';
-import { TrashIcon } from './icons/TrashIcon';
-import { ChecklistIcon } from './icons/ChecklistIcon';
 
 interface GoalItemProps {
     goal: Goal;
@@ -19,39 +18,78 @@ const GoalItem: React.FC<GoalItemProps> = ({ goal, tasks, onEdit, onDelete, onLi
     const progress = linkedTasks.length > 0 ? (completedTasks / linkedTasks.length) * 100 : (goal.completed ? 100 : 0);
 
     return (
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-md space-y-3">
-            <div className="flex items-start justify-between gap-4">
-                <div className="flex-grow">
-                    <div className="flex items-center gap-3">
-                        <input
-                            type="checkbox"
-                            checked={goal.completed}
-                            onChange={() => onToggleGoal(goal.id)}
-                            className="h-6 w-6 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
-                        />
-                        <div>
-                            <h3 className={`text-lg font-bold text-slate-800 dark:text-slate-100 ${goal.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>{goal.title}</h3>
-                            {goal.targetDate && <p className="text-xs text-slate-500 dark:text-slate-400">Scadenza: {new Date(goal.targetDate).toLocaleDateString('it-IT')}</p>}
+        <div className="glass-card p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all group">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex-grow space-y-4">
+                    <div className="flex items-start gap-4">
+                        <button 
+                            onClick={() => onToggleGoal(goal.id)}
+                            className={`mt-1 transition-all duration-300 ${goal.completed ? 'text-emerald-500 scale-110' : 'text-slate-300 hover:text-brand-500 hover:scale-110'}`}
+                        >
+                            {goal.completed ? <CheckCircle2 size={24} strokeWidth={2.5} /> : <Circle size={24} strokeWidth={2.5} />}
+                        </button>
+                        <div className="space-y-1">
+                            <h3 className={`text-lg font-black tracking-tight transition-all ${goal.completed ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>
+                                {goal.title}
+                            </h3>
+                            {goal.targetDate && (
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                                    <Calendar size={12} />
+                                    Scadenza: {new Date(goal.targetDate).toLocaleDateString('it-IT')}
+                                </div>
+                            )}
                         </div>
                     </div>
-                    {goal.description && <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 pl-9">{goal.description}</p>}
+                    
+                    {goal.description && (
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 pl-10 leading-relaxed">
+                            {goal.description}
+                        </p>
+                    )}
                 </div>
-                 <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={() => onLinkTasks(goal)} title="Collega Attività" className="p-2 text-slate-500 hover:text-violet-500 dark:hover:text-violet-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><ChecklistIcon className="w-5 h-5"/></button>
-                    <button onClick={() => onEdit(goal)} className="p-2 text-slate-500 hover:text-violet-500 dark:hover:text-violet-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><PencilIcon /></button>
-                    <button onClick={() => onDelete(goal.id)} className="p-2 text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition"><TrashIcon /></button>
+
+                <div className="flex items-center gap-2 self-end md:self-center bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                    <button 
+                        onClick={() => onLinkTasks(goal)} 
+                        title="Collega Attività" 
+                        className="p-2.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all"
+                    >
+                        <Link2 size={18}/>
+                    </button>
+                    <button 
+                        onClick={() => onEdit(goal)} 
+                        title="Modifica"
+                        className="p-2.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all"
+                    >
+                        <Pencil size={18} />
+                    </button>
+                    <button 
+                        onClick={() => onDelete(goal.id)} 
+                        title="Elimina"
+                        className="p-2.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                    >
+                        <Trash2 size={18} />
+                    </button>
                 </div>
             </div>
-            <div>
-                <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Progresso</span>
-                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{Math.round(progress)}%</span>
+
+            <div className="mt-8 space-y-3">
+                <div className="flex justify-between items-end">
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Progresso Obiettivo</span>
+                        <div className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                            {completedTasks} di {linkedTasks.length} attività completate
+                        </div>
+                    </div>
+                    <span className="text-2xl font-black text-brand-600 dark:text-brand-400 tabular-nums">{Math.round(progress)}%</span>
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
-                    <div className="bg-violet-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
-                </div>
-                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    {completedTasks} di {linkedTasks.length} attività completate
+                <div className="relative w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full shadow-[0_0_12px_rgba(var(--brand-600-rgb),0.3)]"
+                    />
                 </div>
             </div>
         </div>

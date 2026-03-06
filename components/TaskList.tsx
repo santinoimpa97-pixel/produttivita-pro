@@ -1,9 +1,9 @@
 
 import React from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { Task } from '../types';
 import TaskItem from './TaskItem';
 
-// FIX: Export TaskListProps to be used in other components.
 export interface TaskListProps {
   tasks: Task[];
   onToggleTask: (id: string) => void;
@@ -31,9 +31,9 @@ const TaskList: React.FC<TaskListProps> = ({
 }) => {
   if (tasks.length === 0) {
     return (
-      <div className="text-center py-6 px-4">
-        <p className="text-slate-500 dark:text-slate-400">
-          Nessuna attività corrisponde ai filtri correnti.
+      <div className="text-center py-10 px-4">
+        <p className="text-slate-400 dark:text-slate-500 font-medium italic">
+          Nessuna attività in questa categoria.
         </p>
       </div>
     );
@@ -41,21 +41,23 @@ const TaskList: React.FC<TaskListProps> = ({
 
   return (
     <div className="space-y-4">
-      {tasks.map((task) => (
-        <TaskItem
-          key={task.id}
-          task={task}
-          onToggle={onToggleTask}
-          onDelete={onDeleteTask}
-          onUpdate={onUpdateTask}
-          onAddSubTask={onAddSubTask}
-          onToggleSubTask={onToggleSubTask}
-          onDeleteSubTask={onDeleteSubTask}
-          onUpdateSubTask={onUpdateSubTask}
-          onGenerateSubtasks={onGenerateSubtasks}
-          isGenerating={generatingTaskId === task.id}
-        />
-      ))}
+      <AnimatePresence mode="popLayout">
+        {tasks.map((task) => (
+          <TaskItem
+            key={task.id}
+            task={task}
+            onToggle={onToggleTask}
+            onDelete={onDeleteTask}
+            onUpdate={onUpdateTask}
+            onAddSubTask={onAddSubTask}
+            onToggleSubTask={onToggleSubTask}
+            onDeleteSubTask={onDeleteSubTask}
+            onUpdateSubTask={onUpdateSubTask}
+            onGenerateSubtasks={onGenerateSubtasks}
+            isGenerating={generatingTaskId === task.id}
+          />
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
