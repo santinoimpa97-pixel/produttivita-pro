@@ -14,6 +14,7 @@ const AuthView: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
+    const [rememberMe, setRememberMe] = useState(true);
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,6 +24,10 @@ const AuthView: React.FC = () => {
 
         if (mode === 'login') {
             const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (!error && !rememberMe) {
+                // If not remember me, remove the session from local storage on window close
+                window.addEventListener('beforeunload', () => supabase.auth.signOut(), { once: true });
+            }
             if (error) setError(error.message);
         } else if (mode === 'register') {
             const { data, error } = await supabase.auth.signUp({
@@ -138,7 +143,20 @@ const AuthView: React.FC = () => {
                     </div>
                     
                     {mode === 'login' && (
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-between">
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={e => setRememberMe(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-10 h-5 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:bg-brand-600 transition-colors" />
+                                    <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+                                </div>
+                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('auth_remember_me')}</span>
+                            </label>
                             <button type="button" onClick={() => setMode('forgotPassword')} className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline uppercase tracking-widest">
                                 {t('auth_forgot_password')}
                             </button>

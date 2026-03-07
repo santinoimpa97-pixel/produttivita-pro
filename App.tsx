@@ -561,7 +561,7 @@ function App() {
   // Goal Handlers
   const handleAddGoal = async (goal: Omit<Goal, 'id' | 'completed' | 'linkedTaskIds'>) => {
       if(!user) return;
-      const newGoal: Goal = { id: newId(), completed: false, linkedTaskIds: [], ...goal };
+      const newGoal: Goal = { completed: false, linkedTaskIds: [], ...goal, id: newId() };
       setGoals(prev => [newGoal, ...prev]);
       const { error } = await supabase.from('goals').insert({id: newGoal.id, user_id: user.id, title: newGoal.title, description: newGoal.description, target_date: newGoal.targetDate, completed: false, linked_task_ids: []});
       if(error){
