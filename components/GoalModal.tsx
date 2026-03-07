@@ -128,7 +128,7 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                                             type="date"
                                             value={targetDate}
                                             onChange={(e) => setTargetDate(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all"
+                                            className="w-full min-w-0 appearance-none pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all"
                                         />
                                     </div>
                                 </div>

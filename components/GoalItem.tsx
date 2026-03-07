@@ -51,7 +51,7 @@ const GoalItem: React.FC<GoalItemProps> = ({ goal, tasks, onEdit, onDelete, onLi
                     )}
                 </div>
 
-                <div className="flex items-center gap-2 self-end md:self-center bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                <div className="flex items-center gap-2 self-end md:self-center bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 transition-all">
                     <button 
                         onClick={() => onLinkTasks(goal)} 
                         title={t('goals_link_tasks')} 
