@@ -153,7 +153,7 @@ const NotesView: React.FC<NotesViewProps> = ({ notes, onAddNote, onUpdateNote, o
                                     >
                                         <div className="flex justify-between items-start mb-3">
                                             <h4 className="font-black text-slate-900 dark:text-white truncate pr-8">{note.title}</h4>
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-1 transition-opacity">
                                                 <button 
                                                     onClick={() => startEditing(note)}
                                                     className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all"

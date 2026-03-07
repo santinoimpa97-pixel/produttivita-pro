@@ -565,8 +565,11 @@ function App() {
       setGoals(prev => [newGoal, ...prev]);
       const { error } = await supabase.from('goals').insert({id: newGoal.id, user_id: user.id, title: newGoal.title, description: newGoal.description, target_date: newGoal.targetDate, completed: false, linked_task_ids: []});
       if(error){
-          console.error("Failed to add goal:", error.message);
+          console.error("Failed to add goal - full error:", JSON.stringify(error, null, 2));
+          console.error("Goal data sent:", {id: newGoal.id, user_id: user.id, title: newGoal.title, description: newGoal.description, target_date: newGoal.targetDate, completed: false, linked_task_ids: []});
           setGoals(prev => prev.filter(g => g.id !== newGoal.id));
+      } else {
+          console.log("Goal added successfully:", newGoal.id);
       }
   };
   

@@ -155,7 +155,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 transition-opacity">
             <button 
               onClick={() => setIsEditing(true)} 
               className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all"
