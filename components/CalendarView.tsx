@@ -219,7 +219,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                                     </div>
                                     <button 
                                         onClick={() => onDeleteAppointment(appointment.id)} 
-                                        className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
+                                        className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
                                     >
                                         <Trash2 size={18} />
                                     </button>

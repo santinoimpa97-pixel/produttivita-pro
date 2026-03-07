@@ -24,8 +24,8 @@ const getAi = () => {
 export const generateMotivationalQuote = async (language: Language = 'it'): Promise<string> => {
     try {
         const langInstruction = language === 'en'
-            ? 'Generate a concise and powerful motivational quote suitable for a productivity app. The quote must be in English.'
-            : 'Genera una frase motivazionale concisa e potente, adatta per un\'app di produttività. La frase deve essere in italiano.';
+            ? `Generate a new, unique, concise and powerful motivational quote suitable for a productivity app. To ensure variety, seed your generation with this precise moment: ${new Date().toISOString()}. The quote must be in English.`
+            : `Genera una frase motivazionale sempre nuova, unica, concisa e potente, adatta per un'app di produttività. Per garantire varietà, usa questo momento esatto come seme: ${new Date().toISOString()}. La frase deve essere in italiano.`;
 
         const response = await getAi().models.generateContent({
             model: "gemini-3-flash-preview",
