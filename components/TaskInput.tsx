@@ -40,7 +40,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
             <label htmlFor="due-date" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1 flex items-center gap-1">
               <Calendar size={12} /> {t('tasks_due_date')}
             </label>
@@ -49,10 +49,10 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-xl text-slate-900 dark:text-white focus:outline-none transition-all text-sm"
+              className="w-full min-w-0 appearance-none px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-xl text-slate-900 dark:text-white focus:outline-none transition-all text-sm"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
             <label htmlFor="priority" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1 flex items-center gap-1">
               <Flag size={12} /> {t('tasks_priority')}
             </label>
