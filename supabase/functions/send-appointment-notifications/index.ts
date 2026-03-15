@@ -1,6 +1,5 @@
 // Supabase Edge Function: send-appointment-notifications
 // Scheduled every 15 minutes to send push reminders for upcoming appointments.
-// Deploy with: supabase functions deploy send-appointment-notifications
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // @ts-ignore - web-push types not available in Deno
@@ -14,17 +13,39 @@ const VAPID_EMAIL = Deno.env.get('VAPID_EMAIL')!;
 
 webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
+// Get the current Italian time offset in ms (handles CET/CEST automatically)
+function getItalyOffsetMs(): number {
+  const now = new Date();
+  // Format the time in Rome timezone to extract the offset
+  const romeStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Rome',
+    hour: 'numeric', minute: 'numeric', hour12: false
+  }).format(now);
+  const utcStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    hour: 'numeric', minute: 'numeric', hour12: false
+  }).format(now);
+  const [rh, rm] = romeStr.split(':').map(Number);
+  const [uh, um] = utcStr.split(':').map(Number);
+  return ((rh * 60 + rm) - (uh * 60 + um)) * 60 * 1000;
+}
+
 Deno.serve(async (_req) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const now = new Date();
-    const windowStart = new Date(now.getTime() + 14 * 60 * 1000); // 14 min from now
-    const windowEnd = new Date(now.getTime() + 31 * 60 * 1000);   // 31 min from now
+    const italyOffsetMs = getItalyOffsetMs();
 
-    const todayStr = now.toISOString().split('T')[0];
+    // Convert "now" to Italian local time for date calculation
+    const nowInItaly = new Date(now.getTime() + italyOffsetMs);
+    const todayStr = nowInItaly.toISOString().split('T')[0];
 
-    // Fetch appointments with notify=true for today
+    const windowStart = new Date(now.getTime() + 14 * 60 * 1000);
+    const windowEnd = new Date(now.getTime() + 31 * 60 * 1000);
+
+    console.log(`Running at UTC: ${now.toISOString()}, Italy date: ${todayStr}, window: ${windowStart.toISOString()} - ${windowEnd.toISOString()}`);
+
     const { data: appointments, error: appError } = await supabase
       .from('appointments')
       .select('id, text, date, time, user_id')
@@ -32,26 +53,34 @@ Deno.serve(async (_req) => {
       .eq('date', todayStr);
 
     if (appError) throw appError;
+
+    console.log(`Found ${appointments?.length ?? 0} appointments with notify=true for ${todayStr}`);
+
     if (!appointments?.length) {
-      return new Response(JSON.stringify({ sent: 0 }), { status: 200 });
+      return new Response(JSON.stringify({ sent: 0, message: 'No notify appointments today' }), { status: 200 });
     }
 
     let sent = 0;
 
     for (const appointment of appointments) {
-      const appointmentDateTime = new Date(`${appointment.date}T${appointment.time}`);
+      // Parse appointment time as Italian local time → convert to UTC for comparison
+      const dtLocal = new Date(`${appointment.date}T${appointment.time}:00`);
+      const dtUTC = new Date(dtLocal.getTime() - italyOffsetMs);
 
-      // Only notify if appointment is within the 15-30 minute window
-      if (appointmentDateTime < windowStart || appointmentDateTime > windowEnd) continue;
+      console.log(`Appointment "${appointment.text}" at Italian time ${appointment.time}, UTC: ${dtUTC.toISOString()}, in window: ${dtUTC >= windowStart && dtUTC <= windowEnd}`);
 
-      // Get the push subscription for this user
+      if (dtUTC < windowStart || dtUTC > windowEnd) continue;
+
       const { data: subData } = await supabase
         .from('push_subscriptions')
         .select('subscription')
         .eq('user_id', appointment.user_id)
         .single();
 
-      if (!subData?.subscription) continue;
+      if (!subData?.subscription) {
+        console.log(`No push subscription for user ${appointment.user_id}`);
+        continue;
+      }
 
       const payload = JSON.stringify({
         title: '📅 Promemoria Appuntamento',
@@ -64,9 +93,9 @@ Deno.serve(async (_req) => {
       try {
         await webpush.sendNotification(subData.subscription, payload);
         sent++;
+        console.log(`✅ Push sent for appointment ${appointment.id}`);
       } catch (pushError) {
-        console.error(`Failed to send push for appointment ${appointment.id}:`, pushError);
-        // If subscription is expired/invalid, remove it
+        console.error(`❌ Push failed for appointment ${appointment.id}:`, pushError);
         if ((pushError as any)?.statusCode === 410) {
           await supabase.from('push_subscriptions').delete().eq('user_id', appointment.user_id);
         }
@@ -79,3 +108,4 @@ Deno.serve(async (_req) => {
     return new Response(JSON.stringify({ error: String(error) }), { status: 500 });
   }
 });
+
