@@ -80,10 +80,12 @@ export const subscribeToPush = async (userId: string): Promise<boolean> => {
     console.log('🔔 Step 3 done: endpoint =', subscription.endpoint.substring(0, 50));
 
     console.log('🔔 Step 4: Saving to Supabase...');
-    const { error } = await supabase.from('push_subscriptions').upsert({
+    // Delete existing subscription for this user first, then insert fresh
+    await supabase.from('push_subscriptions').delete().eq('user_id', userId);
+    const { error } = await supabase.from('push_subscriptions').insert({
       user_id: userId,
       subscription: subscription.toJSON(),
-    }, { onConflict: 'user_id' });
+    });
 
     if (error) {
       console.error('❌ Supabase save failed:', error.message);
