@@ -48,6 +48,7 @@ export interface Appointment {
     text: string;
     date: string; // YYYY-MM-DD
     time: string; // HH:mm
+    notify?: boolean;
 }
 
 export interface Goal {

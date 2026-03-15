@@ -26,12 +26,16 @@ import ProfileView from './components/ProfileView';
 import BottomNav, { View } from './components/BottomNav';
 import { supabase } from './supabaseClient';
 import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote } from './services/geminiService';
+import { registerServiceWorker } from './services/notificationService';
 
 import { LanguageContext, useLanguage } from './LanguageContext';
 
 // Main App Component
 function App() {
   const newId = () => crypto.randomUUID();
+
+  // Register service worker for push notifications
+  useEffect(() => { registerServiceWorker(); }, []);
 
   const [language, setLanguage] = useState<Language>(() => {
     return (localStorage.getItem('language') as Language) || 'it';
@@ -540,7 +544,7 @@ function App() {
       if(!user) return;
       const newAppointment: Appointment = { id: newId(), ...appointment };
       setAppointments(prev => [...prev, newAppointment].sort((a,b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()));
-      const { error } = await supabase.from('appointments').insert({ id: newAppointment.id, user_id: user.id, ...appointment});
+      const { error } = await supabase.from('appointments').insert({ id: newAppointment.id, user_id: user.id, text: appointment.text, date: appointment.date, time: appointment.time, notify: appointment.notify ?? false });
       if(error){
           console.error("Failed to add appointment:", error.message);
           setAppointments(prev => prev.filter(a => a.id !== newAppointment.id));
@@ -707,6 +711,7 @@ function App() {
                 appointments={appointments}
                 onAddAppointment={handleAddAppointment}
                 onDeleteAppointment={handleDeleteAppointment}
+                userId={user?.id}
             />;
         case 'analytics':
             return <AnalyticsView tasks={tasks} />;

@@ -1,13 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Bell } from 'lucide-react';
+import { Plus, Trash2, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Bell, BellOff } from 'lucide-react';
 import { Appointment } from '../types';
 import { useLanguage } from '../LanguageContext';
+import { subscribeToPush, unsubscribeFromPush, isPushEnabled } from '../services/notificationService';
 
 interface CalendarViewProps {
     appointments: Appointment[];
     onAddAppointment: (appointment: Omit<Appointment, 'id'>) => void;
     onDeleteAppointment: (id: string) => void;
+    userId?: string;
 }
 
 const toLocalISOString = (date: Date): string => {
@@ -17,13 +19,20 @@ const toLocalISOString = (date: Date): string => {
     return `${year}-${month}-${day}`;
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointment, onDeleteAppointment }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointment, onDeleteAppointment, userId }) => {
     const { t, language } = useLanguage();
     const locale = language === 'en' ? 'en-US' : 'it-IT';
     const [currentDate, setCurrentDate] = useState(new Date());
     const [newAppointmentText, setNewAppointmentText] = useState('');
     const [newAppointmentDate, setNewAppointmentDate] = useState(toLocalISOString(new Date()));
     const [newAppointmentTime, setNewAppointmentTime] = useState('12:00');
+    const [notifyNew, setNotifyNew] = useState(false);
+    const [pushEnabled, setPushEnabled] = useState(false);
+    const [pushLoading, setPushLoading] = useState(false);
+
+    useEffect(() => {
+        isPushEnabled().then(setPushEnabled);
+    }, []);
 
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -67,9 +76,24 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                 text: newAppointmentText.trim(),
                 date: newAppointmentDate,
                 time: newAppointmentTime,
+                notify: notifyNew && pushEnabled,
             });
             setNewAppointmentText('');
+            setNotifyNew(false);
         }
+    };
+
+    const handleTogglePush = async () => {
+        if (!userId) return;
+        setPushLoading(true);
+        if (pushEnabled) {
+            await unsubscribeFromPush(userId);
+            setPushEnabled(false);
+        } else {
+            const ok = await subscribeToPush(userId);
+            setPushEnabled(ok);
+        }
+        setPushLoading(false);
     };
     
     const changeMonth = (offset: number) => {
@@ -83,12 +107,33 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
     return (
         <div className="space-y-10">
             <section className="space-y-4">
-                <div className="space-y-1">
-                    <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                        <CalendarIcon className="text-brand-600" size={28} />
-                        {t('calendar_title')}
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">{t('calendar_empty')}</p>
+                <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                        <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                            <CalendarIcon className="text-brand-600" size={28} />
+                            {t('calendar_title')}
+                        </h2>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">{t('calendar_subtitle')}</p>
+                    </div>
+                    {/* Global push notification toggle */}
+                    {'Notification' in window && (
+                        <button
+                            onClick={handleTogglePush}
+                            disabled={pushLoading}
+                            title={pushEnabled ? (language === 'en' ? 'Disable notifications' : 'Disabilita notifiche') : (language === 'en' ? 'Enable notifications' : 'Abilita notifiche')}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all ${
+                                pushEnabled
+                                    ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20 hover:bg-brand-700'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                            } disabled:opacity-50`}
+                        >
+                            {pushEnabled ? <Bell size={16} /> : <BellOff size={16} />}
+                            {pushEnabled
+                                ? (language === 'en' ? 'Notifications On' : 'Notifiche Attive')
+                                : (language === 'en' ? 'Enable Alerts' : 'Abilita Avvisi')
+                            }
+                        </button>
+                    )}
                 </div>
 
                 <div className="glass-card p-6 rounded-[2.5rem] shadow-xl shadow-brand-500/5">
@@ -111,17 +156,36 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                                 type="date" 
                                 value={newAppointmentDate} 
                                 onChange={e => setNewAppointmentDate(e.target.value)} 
-                                className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all" 
+                                className="w-full min-w-0 appearance-none px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all" 
                                 required 
                             />
                             <input 
                                 type="time" 
                                 value={newAppointmentTime} 
                                 onChange={e => setNewAppointmentTime(e.target.value)} 
-                                className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all" 
+                                className="w-full min-w-0 appearance-none px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white font-medium focus:outline-none transition-all" 
                                 required 
                             />
                         </div>
+                        {/* Remind me toggle — only if push is enabled */}
+                        {pushEnabled && (
+                            <label className="flex items-center gap-3 cursor-pointer select-none">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        checked={notifyNew}
+                                        onChange={e => setNotifyNew(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-10 h-5 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:bg-brand-600 transition-colors" />
+                                    <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+                                </div>
+                                <div className="flex items-center gap-1.5 text-sm font-bold text-slate-600 dark:text-slate-400">
+                                    <Bell size={14} className={notifyNew ? 'text-brand-600' : 'text-slate-400'} />
+                                    {language === 'en' ? 'Remind me 15 min before' : 'Ricordamelo 15 min prima'}
+                                </div>
+                            </label>
+                        )}
                         <button type="submit" className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-brand-600 text-white font-black rounded-2xl hover:bg-brand-700 shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98] uppercase tracking-widest text-xs">
                             <Plus size={20} strokeWidth={3} /> {t('calendar_add')}
                         </button>
