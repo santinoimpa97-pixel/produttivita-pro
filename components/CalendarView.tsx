@@ -29,6 +29,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
     const [notifyNew, setNotifyNew] = useState(false);
     const [pushEnabled, setPushEnabled] = useState(false);
     const [pushLoading, setPushLoading] = useState(false);
+    const [pushError, setPushError] = useState<string | null>(null);
 
     useEffect(() => {
         isPushEnabled().then(setPushEnabled);
@@ -84,14 +85,28 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
     };
 
     const handleTogglePush = async () => {
-        if (!userId) return;
+        setPushError(null);
+        if (!userId) {
+            setPushError(language === 'en' ? 'You must be logged in to enable notifications.' : 'Devi essere loggato per abilitare le notifiche.');
+            return;
+        }
+        if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+            setPushError(language === 'en' ? 'Push notifications are not supported in this browser.' : 'Le notifiche push non sono supportate in questo browser.');
+            return;
+        }
         setPushLoading(true);
         if (pushEnabled) {
             await unsubscribeFromPush(userId);
             setPushEnabled(false);
         } else {
             const ok = await subscribeToPush(userId);
-            setPushEnabled(ok);
+            if (ok) {
+                setPushEnabled(true);
+            } else {
+                setPushError(language === 'en'
+                    ? 'Could not enable notifications. Make sure VAPID keys are configured on Vercel.'
+                    : 'Impossibile abilitare le notifiche. Verifica che le chiavi VAPID siano configurate su Vercel.');
+            }
         }
         setPushLoading(false);
     };
@@ -116,25 +131,29 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                         <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">{t('calendar_subtitle')}</p>
                     </div>
                     {/* Global push notification toggle */}
-                    {'Notification' in window && (
-                        <button
-                            onClick={handleTogglePush}
-                            disabled={pushLoading}
-                            title={pushEnabled ? (language === 'en' ? 'Disable notifications' : 'Disabilita notifiche') : (language === 'en' ? 'Enable notifications' : 'Abilita notifiche')}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all ${
-                                pushEnabled
-                                    ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20 hover:bg-brand-700'
-                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                            } disabled:opacity-50`}
-                        >
-                            {pushEnabled ? <Bell size={16} /> : <BellOff size={16} />}
-                            {pushEnabled
-                                ? (language === 'en' ? 'Notifications On' : 'Notifiche Attive')
-                                : (language === 'en' ? 'Enable Alerts' : 'Abilita Avvisi')
-                            }
-                        </button>
-                    )}
+                    <button
+                        onClick={handleTogglePush}
+                        disabled={pushLoading}
+                        title={pushEnabled ? (language === 'en' ? 'Disable notifications' : 'Disabilita notifiche') : (language === 'en' ? 'Enable notifications' : 'Abilita notifiche')}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all ${
+                            pushEnabled
+                                ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20 hover:bg-brand-700'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        } disabled:opacity-50`}
+                    >
+                        {pushLoading
+                            ? <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                            : (pushEnabled ? <Bell size={16} /> : <BellOff size={16} />)
+                        }
+                        {pushEnabled
+                            ? (language === 'en' ? 'Notifications On' : 'Notifiche Attive')
+                            : (language === 'en' ? 'Enable Alerts' : 'Abilita Avvisi')
+                        }
+                    </button>
                 </div>
+                {pushError && (
+                    <p className="text-xs font-bold text-red-500 mt-1">{pushError}</p>
+                )}
 
                 <div className="glass-card p-6 rounded-[2.5rem] shadow-xl shadow-brand-500/5">
                     <form onSubmit={handleAddAppointment} className="space-y-4">
