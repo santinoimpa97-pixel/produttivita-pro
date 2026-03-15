@@ -551,6 +551,17 @@ function App() {
       }
   };
 
+  const handleUpdateAppointment = async (id: string, updates: Partial<Appointment>) => {
+      if (!user) return;
+      const oldAppointments = appointments;
+      setAppointments(appointments.map(a => a.id === id ? { ...a, ...updates } : a));
+      const { error } = await supabase.from('appointments').update(updates).eq('user_id', user.id).eq('id', id);
+      if(error){
+          console.error("Failed to update appointment:", error.message);
+          setAppointments(oldAppointments);
+      }
+  };
+
   const handleDeleteAppointment = async (id: string) => {
       if (!user) return;
       const oldAppointments = appointments;
@@ -711,6 +722,7 @@ function App() {
                 appointments={appointments}
                 onAddAppointment={handleAddAppointment}
                 onDeleteAppointment={handleDeleteAppointment}
+                onUpdateAppointment={handleUpdateAppointment}
                 userId={user?.id}
             />;
         case 'analytics':

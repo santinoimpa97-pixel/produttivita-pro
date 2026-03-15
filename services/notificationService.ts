@@ -50,7 +50,7 @@ export const isPushEnabled = async (): Promise<boolean> => {
  * Saves the subscription to Supabase.
  * Returns true if successful.
  */
-export const subscribeToPush = async (userId: string): Promise<boolean> => {
+export const subscribeToPush = async (userId: string, language: string = 'it'): Promise<boolean> => {
   console.log('🔔 subscribeToPush called. userId:', userId);
   console.log('🔔 VAPID_PUBLIC_KEY:', VAPID_PUBLIC_KEY ? `${VAPID_PUBLIC_KEY.substring(0, 20)}...` : 'MISSING!');
 
@@ -85,6 +85,7 @@ export const subscribeToPush = async (userId: string): Promise<boolean> => {
     const { error } = await supabase.from('push_subscriptions').insert({
       user_id: userId,
       subscription: subscription.toJSON(),
+      language,
     });
 
     if (error) {

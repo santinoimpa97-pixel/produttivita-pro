@@ -9,6 +9,7 @@ interface CalendarViewProps {
     appointments: Appointment[];
     onAddAppointment: (appointment: Omit<Appointment, 'id'>) => void;
     onDeleteAppointment: (id: string) => void;
+    onUpdateAppointment?: (id: string, updates: Partial<Appointment>) => void;
     userId?: string;
 }
 
@@ -19,7 +20,7 @@ const toLocalISOString = (date: Date): string => {
     return `${year}-${month}-${day}`;
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointment, onDeleteAppointment, userId }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointment, onDeleteAppointment, onUpdateAppointment, userId }) => {
     const { t, language } = useLanguage();
     const locale = language === 'en' ? 'en-US' : 'it-IT';
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -99,7 +100,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
             await unsubscribeFromPush(userId);
             setPushEnabled(false);
         } else {
-            const ok = await subscribeToPush(userId);
+            const ok = await subscribeToPush(userId, language);
             if (ok) {
                 setPushEnabled(true);
             } else {
@@ -300,12 +301,27 @@ const CalendarView: React.FC<CalendarViewProps> = ({ appointments, onAddAppointm
                                             <span>{appointment.time.substring(0, 5)}</span>
                                         </div>
                                     </div>
-                                    <button 
-                                        onClick={() => onDeleteAppointment(appointment.id)} 
-                                        className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
+                                    <div className="flex flex-col items-center gap-2">
+                                        {onUpdateAppointment && appointment.notify !== undefined && (
+                                            <button 
+                                                onClick={() => onUpdateAppointment(appointment.id, { notify: !appointment.notify })}
+                                                className={`p-2.5 rounded-xl transition-all ${
+                                                    appointment.notify 
+                                                        ? 'text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:hover:bg-brand-900/40' 
+                                                        : 'text-slate-400 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700'
+                                                }`}
+                                                title={appointment.notify ? 'Disattiva promemoria' : 'Attiva promemoria'}
+                                            >
+                                                {appointment.notify ? <Bell size={18} fill="currentColor" /> : <BellOff size={18} />}
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => onDeleteAppointment(appointment.id)} 
+                                            className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
                                 </motion.div>
                             ))
                         ) : (

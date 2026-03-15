@@ -81,7 +81,7 @@ Deno.serve(async (_req) => {
 
       const { data: subData } = await supabase
         .from('push_subscriptions')
-        .select('subscription')
+        .select('subscription, language')
         .eq('user_id', appointment.user_id)
         .single();
 
@@ -90,10 +90,16 @@ Deno.serve(async (_req) => {
         continue;
       }
 
+      const isEnglish = subData.language === 'en';
+      const title = isEnglish ? '📅 Appointment Reminder' : '📅 Promemoria Appuntamento';
+      const bodyText = isEnglish
+        ? `${appointment.text} — in about 15 minutes (${timeStr})`
+        : `${appointment.text} — tra circa 15 minuti (${timeStr})`;
+
       try {
         await webpush.sendNotification(subData.subscription, JSON.stringify({
-          title: '📅 Promemoria Appuntamento',
-          body: `${appointment.text} — tra circa 15 minuti (${timeStr})`,
+          title: title,
+          body: bodyText,
           icon: '/icons/icon-192x192.png',
           tag: `appointment-${appointment.id}`,
           url: '/',
