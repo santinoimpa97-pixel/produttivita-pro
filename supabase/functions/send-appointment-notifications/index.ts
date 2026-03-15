@@ -63,11 +63,18 @@ Deno.serve(async (_req) => {
     let sent = 0;
 
     for (const appointment of appointments) {
+      // Sanitize time to HH:MM (DB may store HH:MM or HH:MM:SS)
+      const timeStr = appointment.time.substring(0, 5);
       // Parse appointment time as Italian local time → convert to UTC for comparison
-      const dtLocal = new Date(`${appointment.date}T${appointment.time}:00`);
+      const dtLocal = new Date(`${appointment.date}T${timeStr}:00`);
       const dtUTC = new Date(dtLocal.getTime() - italyOffsetMs);
 
-      console.log(`Appointment "${appointment.text}" at Italian time ${appointment.time}, UTC: ${dtUTC.toISOString()}, in window: ${dtUTC >= windowStart && dtUTC <= windowEnd}`);
+      if (isNaN(dtUTC.getTime())) {
+        console.log(`Skipping appointment "${appointment.text}" — invalid time format: ${appointment.time}`);
+        continue;
+      }
+
+      console.log(`Appointment "${appointment.text}" at Italian time ${timeStr}, UTC: ${dtUTC.toISOString()}, in window: ${dtUTC >= windowStart && dtUTC <= windowEnd}`);
 
       if (dtUTC < windowStart || dtUTC > windowEnd) continue;
 
