@@ -1,18 +1,8 @@
 {
-  "crons": [
+  "rewrites": [
     {
-      "path": "/api/cron",
-      "schedule": "*/15 * * * *"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
