@@ -13,20 +13,14 @@ const VAPID_EMAIL = Deno.env.get('VAPID_EMAIL')!;
 
 webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
-// Get the current Italian time offset in ms (handles CET/CEST automatically)
-function getItalyOffsetMs(): number {
-  const now = new Date();
-  const romeStr = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Europe/Rome',
-    hour: 'numeric', minute: 'numeric', hour12: false
-  }).format(now);
-  const utcStr = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'UTC',
-    hour: 'numeric', minute: 'numeric', hour12: false
-  }).format(now);
-  const [rh, rm] = romeStr.split(':').map(Number);
-  const [uh, um] = utcStr.split(':').map(Number);
-  return ((rh * 60 + rm) - (uh * 60 + um)) * 60 * 1000;
+/**
+ * Parses a date in a given timezone using the locale string trick.
+ * 'sv-SE' always formats as "YYYY-MM-DD HH:MM:SS" which is safe to parse.
+ * This avoids midnight-crossing bugs from hour subtraction.
+ */
+function toTZDate(date: Date, timeZone: string): Date {
+  const str = date.toLocaleString('sv-SE', { timeZone }).replace(' ', 'T');
+  return new Date(str);
 }
 
 Deno.serve(async (_req) => {
@@ -34,23 +28,22 @@ Deno.serve(async (_req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const now = new Date();
-    const italyOffsetMs = getItalyOffsetMs();
 
-    // Convert "now" to Italian local time for date calculation
+    // Italian offset in ms — computed correctly even across midnight
+    const italyOffsetMs = toTZDate(now, 'Europe/Rome').getTime() - toTZDate(now, 'UTC').getTime();
+
+    // Italian local date (today and tomorrow) for querying appointments
     const nowInItaly = new Date(now.getTime() + italyOffsetMs);
     const todayStr = nowInItaly.toISOString().split('T')[0];
-
-    // Also include tomorrow to handle appointments just after midnight
-    const tomorrowInItaly = new Date(nowInItaly.getTime() + 24 * 60 * 60 * 1000);
-    const tomorrowStr = tomorrowInItaly.toISOString().split('T')[0];
+    const tomorrowStr = new Date(nowInItaly.getTime() + 86400000).toISOString().split('T')[0];
 
     // Notification window: 5 to 20 minutes from now (UTC)
     const windowStart = new Date(now.getTime() + 5 * 60 * 1000);
     const windowEnd = new Date(now.getTime() + 20 * 60 * 1000);
 
-    console.log(`Running at UTC: ${now.toISOString()}, Italy date: ${todayStr}, window: ${windowStart.toISOString()} - ${windowEnd.toISOString()}`);
+    console.log(`UTC: ${now.toISOString()}, italyOffset: ${italyOffsetMs / 3600000}h, dates: ${todayStr}/${tomorrowStr}, window: ${windowStart.toISOString()} - ${windowEnd.toISOString()}`);
 
-    // Fetch appointments with notify=true for today AND tomorrow (handles midnight crossing)
+    // Query appointments with notify=true for today AND tomorrow (handles midnight crossing)
     const { data: appointments, error: appError } = await supabase
       .from('appointments')
       .select('id, text, date, time, user_id')
@@ -59,7 +52,7 @@ Deno.serve(async (_req) => {
 
     if (appError) throw appError;
 
-    console.log(`Found ${appointments?.length ?? 0} appointments with notify=true for ${todayStr} / ${tomorrowStr}`);
+    console.log(`Found ${appointments?.length ?? 0} appointments`);
 
     if (!appointments?.length) {
       return new Response(JSON.stringify({ sent: 0, message: 'No notify appointments' }), { status: 200 });
@@ -70,18 +63,21 @@ Deno.serve(async (_req) => {
     for (const appointment of appointments) {
       // Sanitize time to HH:MM (DB may store HH:MM or HH:MM:SS)
       const timeStr = appointment.time.substring(0, 5);
-      // Parse appointment time as Italian local time → convert to UTC for comparison
-      const dtLocal = new Date(`${appointment.date}T${timeStr}:00`);
-      const dtUTC = new Date(dtLocal.getTime() - italyOffsetMs);
+
+      // The appointment datetime stored in Italian local time.
+      // Parse as UTC (JS default), then subtract offset → real UTC time.
+      const dtAsUTCParsed = new Date(`${appointment.date}T${timeStr}:00Z`);
+      const dtUTC = new Date(dtAsUTCParsed.getTime() - italyOffsetMs);
 
       if (isNaN(dtUTC.getTime())) {
-        console.log(`Skipping "${appointment.text}" — invalid time format: ${appointment.time}`);
+        console.log(`Skipping "${appointment.text}" — invalid time: ${appointment.time}`);
         continue;
       }
 
-      console.log(`Appointment "${appointment.text}" at Italian ${appointment.date} ${timeStr}, UTC: ${dtUTC.toISOString()}, in window: ${dtUTC >= windowStart && dtUTC <= windowEnd}`);
+      const inWindow = dtUTC >= windowStart && dtUTC <= windowEnd;
+      console.log(`"${appointment.text}" ${appointment.date} ${timeStr} IT → ${dtUTC.toISOString()} UTC, in window: ${inWindow}`);
 
-      if (dtUTC < windowStart || dtUTC > windowEnd) continue;
+      if (!inWindow) continue;
 
       const { data: subData } = await supabase
         .from('push_subscriptions')
@@ -90,26 +86,24 @@ Deno.serve(async (_req) => {
         .single();
 
       if (!subData?.subscription) {
-        console.log(`No push subscription for user ${appointment.user_id}`);
+        console.log(`No subscription for user ${appointment.user_id}`);
         continue;
       }
 
-      const payload = JSON.stringify({
-        title: '📅 Promemoria Appuntamento',
-        body: `${appointment.text} — tra circa 15 minuti (${timeStr})`,
-        icon: '/icons/icon-192x192.png',
-        tag: `appointment-${appointment.id}`,
-        url: '/',
-      });
-
       try {
-        await webpush.sendNotification(subData.subscription, payload);
+        await webpush.sendNotification(subData.subscription, JSON.stringify({
+          title: '📅 Promemoria Appuntamento',
+          body: `${appointment.text} — tra circa 15 minuti (${timeStr})`,
+          icon: '/icons/icon-192x192.png',
+          tag: `appointment-${appointment.id}`,
+          url: '/',
+        }));
         sent++;
-        console.log(`✅ Push sent for appointment ${appointment.id}`);
-        // Mark notify=false to prevent duplicate notifications on the next cron run
+        console.log(`✅ Push sent for ${appointment.id}`);
+        // Mark notify=false to prevent duplicate notifications
         await supabase.from('appointments').update({ notify: false }).eq('id', appointment.id);
       } catch (pushError) {
-        console.error(`❌ Push failed for appointment ${appointment.id}:`, pushError);
+        console.error(`❌ Push failed for ${appointment.id}:`, pushError);
         if ((pushError as any)?.statusCode === 410) {
           await supabase.from('push_subscriptions').delete().eq('user_id', appointment.user_id);
         }
