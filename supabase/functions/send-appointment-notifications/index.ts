@@ -16,7 +16,6 @@ webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 // Get the current Italian time offset in ms (handles CET/CEST automatically)
 function getItalyOffsetMs(): number {
   const now = new Date();
-  // Format the time in Rome timezone to extract the offset
   const romeStr = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Europe/Rome',
     hour: 'numeric', minute: 'numeric', hour12: false
@@ -41,23 +40,29 @@ Deno.serve(async (_req) => {
     const nowInItaly = new Date(now.getTime() + italyOffsetMs);
     const todayStr = nowInItaly.toISOString().split('T')[0];
 
+    // Also include tomorrow to handle appointments just after midnight
+    const tomorrowInItaly = new Date(nowInItaly.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = tomorrowInItaly.toISOString().split('T')[0];
+
+    // Notification window: 5 to 20 minutes from now (UTC)
     const windowStart = new Date(now.getTime() + 5 * 60 * 1000);
     const windowEnd = new Date(now.getTime() + 20 * 60 * 1000);
 
     console.log(`Running at UTC: ${now.toISOString()}, Italy date: ${todayStr}, window: ${windowStart.toISOString()} - ${windowEnd.toISOString()}`);
 
+    // Fetch appointments with notify=true for today AND tomorrow (handles midnight crossing)
     const { data: appointments, error: appError } = await supabase
       .from('appointments')
       .select('id, text, date, time, user_id')
       .eq('notify', true)
-      .eq('date', todayStr);
+      .in('date', [todayStr, tomorrowStr]);
 
     if (appError) throw appError;
 
-    console.log(`Found ${appointments?.length ?? 0} appointments with notify=true for ${todayStr}`);
+    console.log(`Found ${appointments?.length ?? 0} appointments with notify=true for ${todayStr} / ${tomorrowStr}`);
 
     if (!appointments?.length) {
-      return new Response(JSON.stringify({ sent: 0, message: 'No notify appointments today' }), { status: 200 });
+      return new Response(JSON.stringify({ sent: 0, message: 'No notify appointments' }), { status: 200 });
     }
 
     let sent = 0;
@@ -70,11 +75,11 @@ Deno.serve(async (_req) => {
       const dtUTC = new Date(dtLocal.getTime() - italyOffsetMs);
 
       if (isNaN(dtUTC.getTime())) {
-        console.log(`Skipping appointment "${appointment.text}" — invalid time format: ${appointment.time}`);
+        console.log(`Skipping "${appointment.text}" — invalid time format: ${appointment.time}`);
         continue;
       }
 
-      console.log(`Appointment "${appointment.text}" at Italian time ${timeStr}, UTC: ${dtUTC.toISOString()}, in window: ${dtUTC >= windowStart && dtUTC <= windowEnd}`);
+      console.log(`Appointment "${appointment.text}" at Italian ${appointment.date} ${timeStr}, UTC: ${dtUTC.toISOString()}, in window: ${dtUTC >= windowStart && dtUTC <= windowEnd}`);
 
       if (dtUTC < windowStart || dtUTC > windowEnd) continue;
 
@@ -91,7 +96,7 @@ Deno.serve(async (_req) => {
 
       const payload = JSON.stringify({
         title: '📅 Promemoria Appuntamento',
-        body: `${appointment.text} — tra circa 15 minuti (${appointment.time.substring(0, 5)})`,
+        body: `${appointment.text} — tra circa 15 minuti (${timeStr})`,
         icon: '/icons/icon-192x192.png',
         tag: `appointment-${appointment.id}`,
         url: '/',
@@ -117,4 +122,3 @@ Deno.serve(async (_req) => {
     return new Response(JSON.stringify({ error: String(error) }), { status: 500 });
   }
 });
-
