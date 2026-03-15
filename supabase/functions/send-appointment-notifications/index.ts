@@ -41,8 +41,8 @@ Deno.serve(async (_req) => {
     const nowInItaly = new Date(now.getTime() + italyOffsetMs);
     const todayStr = nowInItaly.toISOString().split('T')[0];
 
-    const windowStart = new Date(now.getTime() + 14 * 60 * 1000);
-    const windowEnd = new Date(now.getTime() + 31 * 60 * 1000);
+    const windowStart = new Date(now.getTime() + 5 * 60 * 1000);
+    const windowEnd = new Date(now.getTime() + 20 * 60 * 1000);
 
     console.log(`Running at UTC: ${now.toISOString()}, Italy date: ${todayStr}, window: ${windowStart.toISOString()} - ${windowEnd.toISOString()}`);
 
@@ -101,6 +101,8 @@ Deno.serve(async (_req) => {
         await webpush.sendNotification(subData.subscription, payload);
         sent++;
         console.log(`✅ Push sent for appointment ${appointment.id}`);
+        // Mark notify=false to prevent duplicate notifications on the next cron run
+        await supabase.from('appointments').update({ notify: false }).eq('id', appointment.id);
       } catch (pushError) {
         console.error(`❌ Push failed for appointment ${appointment.id}:`, pushError);
         if ((pushError as any)?.statusCode === 410) {
