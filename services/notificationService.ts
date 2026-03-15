@@ -51,39 +51,49 @@ export const isPushEnabled = async (): Promise<boolean> => {
  * Returns true if successful.
  */
 export const subscribeToPush = async (userId: string): Promise<boolean> => {
+  console.log('🔔 subscribeToPush called. userId:', userId);
+  console.log('🔔 VAPID_PUBLIC_KEY:', VAPID_PUBLIC_KEY ? `${VAPID_PUBLIC_KEY.substring(0, 20)}...` : 'MISSING!');
+
   if (!VAPID_PUBLIC_KEY) {
-    console.error('VITE_VAPID_PUBLIC_KEY is not set.');
+    console.error('❌ VITE_VAPID_PUBLIC_KEY is not set in env.');
     return false;
   }
 
   try {
+    console.log('🔔 Step 1: Requesting notification permission...');
     const permission = await Notification.requestPermission();
+    console.log('🔔 Step 1 result: permission =', permission);
     if (permission !== 'granted') {
-      console.warn('Notification permission denied.');
+      console.warn('❌ Permission denied.');
       return false;
     }
 
+    console.log('🔔 Step 2: Waiting for service worker ready...');
     const reg = await navigator.serviceWorker.ready;
+    console.log('🔔 Step 2 done: scope =', reg.scope);
+
+    console.log('🔔 Step 3: Subscribing to PushManager...');
     const subscription = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY).buffer as ArrayBuffer,
     });
+    console.log('🔔 Step 3 done: endpoint =', subscription.endpoint.substring(0, 50));
 
-    // Save to Supabase
+    console.log('🔔 Step 4: Saving to Supabase...');
     const { error } = await supabase.from('push_subscriptions').upsert({
       user_id: userId,
       subscription: subscription.toJSON(),
     }, { onConflict: 'user_id' });
 
     if (error) {
-      console.error('Failed to save push subscription:', error.message);
+      console.error('❌ Supabase save failed:', error.message);
       return false;
     }
 
-    console.log('Push subscription saved successfully.');
+    console.log('✅ Push subscription saved successfully!');
     return true;
   } catch (error) {
-    console.error('Failed to subscribe to push:', error);
+    console.error('❌ Push subscription error:', error);
     return false;
   }
 };
