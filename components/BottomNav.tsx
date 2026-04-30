@@ -4,12 +4,12 @@ import {
   Repeat, 
   Target, 
   Calendar, 
-  BarChart3,
-  StickyNote
+  StickyNote,
+  Sparkles
 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
-export type View = 'tasks' | 'routines' | 'goals' | 'calendar' | 'analytics' | 'notes' | 'profile';
+export type View = 'tasks' | 'routines' | 'goals' | 'calendar' | 'notes' | 'profile' | 'assistant';
 
 interface BottomNavProps {
   currentView: View;
@@ -48,7 +48,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onSetView }) => {
     { view: 'goals', label: t('nav_goals'), icon: <Target /> },
     { view: 'calendar', label: t('nav_calendar'), icon: <Calendar /> },
     { view: 'notes', label: t('nav_notes'), icon: <StickyNote /> },
-    { view: 'analytics', label: t('nav_analytics'), icon: <BarChart3 /> },
+    { view: 'assistant', label: t('nav_assistant'), icon: <Sparkles /> },
   ];
 
   return (

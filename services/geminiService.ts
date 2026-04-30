@@ -176,3 +176,55 @@ export const generateRoutineTasks = async (routineName: string, language: Langua
     return [];
   }
 };
+
+/**
+ * Chats with the personal assistant, passing the profile context.
+ */
+export const chatWithAssistant = async (
+    userMessage: string,
+    history: { role: 'user' | 'model', content: string }[],
+    profile: { bio: string; strengths: string; weaknesses: string; rules: string },
+    language: Language = 'it'
+): Promise<string> => {
+    try {
+        const systemPrompt = language === 'en'
+            ? `You are the user's personal productivity coach and assistant.
+You know the following about the user:
+- Bio: ${profile.bio || 'Not specified'}
+- Strengths: ${profile.strengths || 'Not specified'}
+- Weaknesses: ${profile.weaknesses || 'Not specified'}
+- Rules & Tone of voice: ${profile.rules || 'Be helpful and motivating.'}
+
+Always respond taking this information into account. Be concise, empathetic, and actionable.`
+            : `Sei il coach e assistente personale di produttività dell'utente.
+Sai le seguenti cose sull'utente:
+- Bio: ${profile.bio || 'Non specificata'}
+- Punti di forza: ${profile.strengths || 'Non specificati'}
+- Debolezze: ${profile.weaknesses || 'Non specificate'}
+- Regole e Tono di voce: ${profile.rules || 'Sii d\'aiuto e motivante.'}
+
+Rispondi sempre tenendo conto di queste informazioni. Sii conciso, empatico e orientato all'azione.`;
+
+        // Format history for Gemini API
+        const formattedHistory = history.map(msg => ({
+            role: msg.role === 'model' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }));
+
+        const chat = getAi().chats.create({
+            model: "gemini-3-flash-preview",
+            history: formattedHistory,
+            config: {
+                systemInstruction: systemPrompt,
+            }
+        });
+
+        const response = await chat.sendMessage({ message: userMessage });
+        
+        return response.text || (language === 'en' ? "I'm sorry, I couldn't process that." : "Scusa, non sono riuscito a elaborare la richiesta.");
+
+    } catch (error) {
+        console.error("Errore durante la chat con l'assistente:", error);
+        return language === 'en' ? "An error occurred while talking to the assistant." : "Si è verificato un errore durante la comunicazione con l'assistente.";
+    }
+};

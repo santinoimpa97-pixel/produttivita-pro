@@ -66,3 +66,16 @@ export interface Note {
     content: string;
     updatedAt: string;
 }
+
+export interface AssistantProfile {
+    bio: string;
+    strengths: string;
+    weaknesses: string;
+    rules: string;
+}
+
+export interface ChatMessage {
+    id?: string;
+    role: 'user' | 'model';
+    content: string;
+}

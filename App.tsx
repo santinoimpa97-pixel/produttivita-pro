@@ -13,6 +13,8 @@ import {
   Appointment,
   Goal,
   Note,
+  AssistantProfile,
+  ChatMessage,
 } from './types';
 import Header from './components/Header';
 import AuthView from './components/AuthView';
@@ -20,12 +22,12 @@ import TasksView from './components/TasksView';
 import RoutinesView from './components/RoutinesView';
 import GoalsView from './components/GoalsView';
 import CalendarView from './components/CalendarView';
-import AnalyticsView from './components/AnalyticsView';
 import NotesView from './components/NotesView';
 import ProfileView from './components/ProfileView';
+import AssistantView from './components/AssistantView';
 import BottomNav, { View } from './components/BottomNav';
 import { supabase } from './supabaseClient';
-import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote } from './services/geminiService';
+import { generateSubtasksFromGemini, generateRoutineTasks, generateMotivationalQuote, chatWithAssistant } from './services/geminiService';
 import { registerServiceWorker } from './services/notificationService';
 
 import { LanguageContext, useLanguage } from './LanguageContext';
@@ -71,6 +73,11 @@ function App() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  
+  // Assistant States
+  const [assistantProfile, setAssistantProfile] = useState<AssistantProfile>({ bio: '', strengths: '', weaknesses: '', rules: '' });
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [assistantGenerating, setAssistantGenerating] = useState(false);
   
   // AI Loading States
   const [generatingTaskId, setGeneratingTaskId] = useState<string | null>(null);
@@ -121,7 +128,7 @@ function App() {
     setDataLoading(true);
     setDataError(null);
     try {
-        const [tasksRes, subTasksRes, routinesRes, routineTasksRes, templatesRes, appointmentsRes, goalsRes, notesRes] = await Promise.all([
+        const [tasksRes, subTasksRes, routinesRes, routineTasksRes, templatesRes, appointmentsRes, goalsRes, notesRes, profileRes, messagesRes] = await Promise.all([
             supabase.from('tasks').select('*').eq('user_id', userId),
             supabase.from('sub_tasks').select('*').eq('user_id', userId),
             supabase.from('routines').select('*').eq('user_id', userId),
@@ -130,11 +137,14 @@ function App() {
             supabase.from('appointments').select('*').eq('user_id', userId),
             supabase.from('goals').select('*').eq('user_id', userId),
             supabase.from('notes').select('*').eq('user_id', userId),
+            supabase.from('assistant_profiles').select('*').eq('user_id', userId).maybeSingle(),
+            supabase.from('assistant_messages').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
         ]);
 
         const results = [tasksRes, subTasksRes, routinesRes, routineTasksRes, templatesRes, appointmentsRes, goalsRes, notesRes];
         const failedResult = results.find(res => res.error);
         if (failedResult) throw failedResult.error;
+        if (messagesRes.error) throw messagesRes.error;
         
         const tasksData = tasksRes.data || [];
         const subTasksData = subTasksRes.data || [];
@@ -157,6 +167,17 @@ function App() {
         setAppointments(appointmentsRes.data || []);
         setGoals(goalsRes.data?.map((g: any) => ({ ...g, targetDate: g.target_date, linkedTaskIds: g.linked_task_ids || [] })) || []);
         setNotes(notesRes.data?.map((n: any) => ({ ...n, updatedAt: n.updated_at })) || []);
+        
+        if (profileRes.data) {
+            setAssistantProfile({
+                bio: profileRes.data.bio || '',
+                strengths: profileRes.data.strengths || '',
+                weaknesses: profileRes.data.weaknesses || '',
+                rules: profileRes.data.rules || ''
+            });
+        }
+        
+        setChatHistory(messagesRes.data?.map((m: any) => ({ id: m.id, role: m.role as 'user' | 'model', content: m.content })) || []);
 
     } catch (error: any) {
         console.error("Error fetching data:", error.message);
@@ -178,6 +199,8 @@ function App() {
       setAppointments([]);
       setGoals([]);
       setNotes([]);
+      setAssistantProfile({ bio: '', strengths: '', weaknesses: '', rules: '' });
+      setChatHistory([]);
     }
   }, [user?.id, fetchData]);
   
@@ -674,6 +697,45 @@ function App() {
       }
   };
   
+  // Assistant Handlers
+  const handleSaveAssistantProfile = async (newProfile: AssistantProfile) => {
+      if (!user) return;
+      setAssistantProfile(newProfile);
+      const { error } = await supabase.from('assistant_profiles').upsert({ 
+          user_id: user.id, 
+          bio: newProfile.bio, 
+          strengths: newProfile.strengths, 
+          weaknesses: newProfile.weaknesses, 
+          rules: newProfile.rules,
+          updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+      if (error) {
+          console.error("Failed to save assistant profile:", error.message);
+      }
+  };
+
+  const handleSendAssistantMessage = async (content: string) => {
+      if (!user) return;
+      const userMessageId = newId();
+      const newUserMsg: ChatMessage = { id: userMessageId, role: 'user', content };
+      const newHistory = [...chatHistory, newUserMsg];
+      setChatHistory(newHistory);
+      setAssistantGenerating(true);
+      
+      // Save user message to DB
+      await supabase.from('assistant_messages').insert({ id: userMessageId, user_id: user.id, role: 'user', content });
+      
+      const response = await chatWithAssistant(content, chatHistory, assistantProfile, language);
+      
+      const modelMessageId = newId();
+      const newModelMsg: ChatMessage = { id: modelMessageId, role: 'model', content: response };
+      setChatHistory([...newHistory, newModelMsg]);
+      setAssistantGenerating(false);
+      
+      // Save model message to DB
+      await supabase.from('assistant_messages').insert({ id: modelMessageId, user_id: user.id, role: 'model', content: response });
+  };
+
   // Memoized View
   const currentViewComponent = useMemo(() => {
     switch(view) {
@@ -725,8 +787,6 @@ function App() {
                 onUpdateAppointment={handleUpdateAppointment}
                 userId={user?.id}
             />;
-        case 'analytics':
-            return <AnalyticsView tasks={tasks} />;
         case 'notes':
             return <NotesView 
                 notes={notes}
@@ -736,10 +796,18 @@ function App() {
             />;
         case 'profile':
             return user ? <ProfileView user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} language={language} onSetLanguage={handleSetLanguage} /> : null;
+        case 'assistant':
+            return <AssistantView
+                profile={assistantProfile}
+                onSaveProfile={handleSaveAssistantProfile}
+                chatHistory={chatHistory}
+                onSendMessage={handleSendAssistantMessage}
+                isGenerating={assistantGenerating}
+            />;
         default:
             return <h2>View not found</h2>;
     }
-  }, [view, tasks, routines, templates, appointments, goals, notes, generatingTaskId, generatingRoutineId, user, language]);
+  }, [view, tasks, routines, templates, appointments, goals, notes, generatingTaskId, generatingRoutineId, user, language, assistantProfile, chatHistory, assistantGenerating]);
 
   const renderMainContent = () => {
     if (dataLoading) {

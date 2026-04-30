@@ -8,7 +8,6 @@ const translations = {
     nav_goals: 'Obiettivi',
     nav_calendar: 'Calendario',
     nav_notes: 'Note',
-    nav_analytics: 'Analytics',
 
     // Header
     header_subtitle_loading: 'Caricamento frase del giorno...',
@@ -105,18 +104,6 @@ const translations = {
     notes_edit: 'Modifica',
     notes_delete: 'Elimina',
 
-    // Analytics
-    analytics_title: 'Analytics',
-    analytics_subtitle: 'Monitora i tuoi progressi e la tua produttività.',
-    analytics_total_tasks: 'Totale Attività',
-    analytics_total_desc: 'Volume totale di lavoro gestito finora.',
-    analytics_completed: 'Completate',
-    analytics_completed_desc: 'Traguardi raggiunti con successo.',
-    analytics_pending: 'In Sospeso',
-    analytics_completion_status: 'Stato Completamento',
-    analytics_priority_dist: 'Distribuzione Priorità',
-    analytics_no_data: 'Nessun dato disponibile',
-
     // Auth
     auth_login: 'Accedi',
     auth_register: 'Registrati',
@@ -145,6 +132,26 @@ const translations = {
     menu_theme_dark: 'Tema Scuro',
     menu_logout: 'Esci',
 
+    // Assistant
+    nav_assistant: 'Coach',
+    assistant_title: 'Il tuo Coach IA',
+    assistant_subtitle: 'Il tuo assistente personale che ti conosce e ti motiva.',
+    assistant_tab_chat: 'Chat',
+    assistant_tab_profile: 'La Mente (Profilo)',
+    assistant_chat_placeholder: 'Scrivi un messaggio...',
+    assistant_chat_send: 'Invia',
+    assistant_profile_bio_label: 'Chi sei? (Bio)',
+    assistant_profile_bio_placeholder: 'Es: Sono uno studente di ingegneria, lavoro part-time...',
+    assistant_profile_strengths_label: 'I tuoi Punti di Forza',
+    assistant_profile_strengths_placeholder: 'Es: Sono creativo, inizio i progetti con entusiasmo...',
+    assistant_profile_weaknesses_label: 'Le tue Debolezze',
+    assistant_profile_weaknesses_placeholder: 'Es: Procrastino molto, mi distraggo con il telefono...',
+    assistant_profile_rules_label: 'Regole e Tono di Voce',
+    assistant_profile_rules_placeholder: 'Es: Sii severo ma incoraggiante. Ricordami sempre di studiare...',
+    assistant_profile_save: 'Salva Profilo IA',
+    assistant_profile_saved: 'Profilo salvato!',
+    assistant_empty_chat: 'Ciao! Sono il tuo coach. Come posso aiutarti oggi?',
+
     // General
     loading: 'Caricamento dei tuoi dati...',
     auth_checking: 'Verifica in corso...',
@@ -163,7 +170,6 @@ const translations = {
     nav_goals: 'Goals',
     nav_calendar: 'Calendar',
     nav_notes: 'Notes',
-    nav_analytics: 'Analytics',
 
     // Header
     header_subtitle_loading: 'Loading quote of the day...',
@@ -260,18 +266,6 @@ const translations = {
     notes_edit: 'Edit',
     notes_delete: 'Delete',
 
-    // Analytics
-    analytics_title: 'Analytics',
-    analytics_subtitle: 'Monitor your progress and productivity.',
-    analytics_total_tasks: 'Total Tasks',
-    analytics_total_desc: 'Total volume of work managed so far.',
-    analytics_completed: 'Completed',
-    analytics_completed_desc: 'Successfully achieved milestones.',
-    analytics_pending: 'Pending',
-    analytics_completion_status: 'Completion Status',
-    analytics_priority_dist: 'Priority Distribution',
-    analytics_no_data: 'No data available',
-
     // Auth
     auth_login: 'Sign In',
     auth_register: 'Sign Up',
@@ -299,6 +293,26 @@ const translations = {
     menu_theme_light: 'Light Theme',
     menu_theme_dark: 'Dark Theme',
     menu_logout: 'Sign Out',
+
+    // Assistant
+    nav_assistant: 'Coach',
+    assistant_title: 'Your AI Coach',
+    assistant_subtitle: 'Your personal assistant that knows and motivates you.',
+    assistant_tab_chat: 'Chat',
+    assistant_tab_profile: 'The Mind (Profile)',
+    assistant_chat_placeholder: 'Type a message...',
+    assistant_chat_send: 'Send',
+    assistant_profile_bio_label: 'Who are you? (Bio)',
+    assistant_profile_bio_placeholder: 'E.g: I am an engineering student, working part-time...',
+    assistant_profile_strengths_label: 'Your Strengths',
+    assistant_profile_strengths_placeholder: 'E.g: I am creative, I start projects with enthusiasm...',
+    assistant_profile_weaknesses_label: 'Your Weaknesses',
+    assistant_profile_weaknesses_placeholder: 'E.g: I procrastinate a lot, I get distracted by my phone...',
+    assistant_profile_rules_label: 'Rules and Tone of Voice',
+    assistant_profile_rules_placeholder: 'E.g: Be strict but encouraging. Always remind me to study...',
+    assistant_profile_save: 'Save AI Profile',
+    assistant_profile_saved: 'Profile saved!',
+    assistant_empty_chat: 'Hello! I am your coach. How can I help you today?',
 
     // General
     loading: 'Loading your data...',
