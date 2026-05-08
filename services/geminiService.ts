@@ -233,7 +233,9 @@ Rispondi sempre tenendo conto di queste informazioni. Sii conciso, empatico e or
         return response.text || (language === 'en' ? "I'm sorry, I couldn't process that." : "Scusa, non sono riuscito a elaborare la richiesta.");
 
     } catch (error: any) {
-        console.error("Errore durante la chat con l'assistente:", error?.message || error);
-        return language === 'en' ? "An error occurred while talking to the assistant." : "Si è verificato un errore durante la comunicazione con l'assistente.";
+        const errorMsg = error?.message || String(error);
+        console.error("Errore durante la chat con l'assistente:", errorMsg);
+        const hasKey = !!import.meta.env.VITE_GEMINI_API_KEY;
+        return `❌ Errore: ${errorMsg}\n\n🔑 API Key presente: ${hasKey ? 'Sì' : 'NO - Manca VITE_GEMINI_API_KEY!'}`;
     }
 };
