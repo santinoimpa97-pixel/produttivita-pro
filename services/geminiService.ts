@@ -1,8 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Language } from "../i18n";
 
-// --- CONFIGURAZIONE PER L'AMBIENTE DI SVILUPPO (AI Studio) ---
-const apiKey = process.env.GEMINI_API_KEY;
+// --- CONFIGURAZIONE API ---
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 let aiInstance: any = null;
 
