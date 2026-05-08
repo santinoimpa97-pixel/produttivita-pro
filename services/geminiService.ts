@@ -205,26 +205,35 @@ Sai le seguenti cose sull'utente:
 
 Rispondi sempre tenendo conto di queste informazioni. Sii conciso, empatico e orientato all'azione.`;
 
-        // Format history for Gemini API
-        const formattedHistory = history.map(msg => ({
-            role: msg.role === 'model' ? 'model' : 'user',
-            parts: [{ text: msg.content }]
-        }));
+        // Build the full conversation as contents array
+        const contents: { role: string; parts: { text: string }[] }[] = [];
 
-        const chat = getAi().chats.create({
-            model: "gemini-3-flash-preview",
-            history: formattedHistory,
+        // Add conversation history
+        for (const msg of history) {
+            contents.push({
+                role: msg.role === 'model' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            });
+        }
+
+        // Add the new user message
+        contents.push({
+            role: 'user',
+            parts: [{ text: userMessage }]
+        });
+
+        const response = await getAi().models.generateContent({
+            model: "gemini-2.0-flash",
+            contents: contents,
             config: {
                 systemInstruction: systemPrompt,
             }
         });
-
-        const response = await chat.sendMessage({ message: userMessage });
         
         return response.text || (language === 'en' ? "I'm sorry, I couldn't process that." : "Scusa, non sono riuscito a elaborare la richiesta.");
 
-    } catch (error) {
-        console.error("Errore durante la chat con l'assistente:", error);
+    } catch (error: any) {
+        console.error("Errore durante la chat con l'assistente:", error?.message || error);
         return language === 'en' ? "An error occurred while talking to the assistant." : "Si è verificato un errore durante la comunicazione con l'assistente.";
     }
 };
