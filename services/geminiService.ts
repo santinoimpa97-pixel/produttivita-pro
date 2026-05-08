@@ -223,7 +223,7 @@ Rispondi sempre tenendo conto di queste informazioni. Sii conciso, empatico e or
         });
 
         const response = await getAi().models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-3-flash-preview",
             contents: contents,
             config: {
                 systemInstruction: systemPrompt,
