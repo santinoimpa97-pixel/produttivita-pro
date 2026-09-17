@@ -117,7 +117,7 @@ function App() {
   const handleRefreshQuote = async () => {
     setIsRefreshingQuote(true);
     try {
-      const quote = await generateMotivationalQuote(language);
+      const quote = await generateMotivationalQuote(language, true);
       setSubtitle(quote);
     } finally {
       setIsRefreshingQuote(false);
@@ -127,8 +127,8 @@ function App() {
   useEffect(() => {
     if (user?.id) {
       const fetchQuote = async () => {
-        setSubtitle(t('header_subtitle_loading'));
-        const quote = await generateMotivationalQuote(language);
+        // Only fetch if not already loaded or language changed
+        const quote = await generateMotivationalQuote(language, false);
         setSubtitle(quote);
       };
       fetchQuote();

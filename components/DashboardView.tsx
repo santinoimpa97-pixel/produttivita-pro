@@ -76,8 +76,22 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [isAmbientActive, setIsAmbientActive] = useState(false);
 
-  // AI Day Planner State
-  const [dayPlan, setDayPlan] = useState<DayPlanItem[] | null>(null);
+  // AI Day Planner State with local cache for today
+  const [dayPlan, setDayPlan] = useState<DayPlanItem[] | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('produttivita_day_plan');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const today = new Date().toISOString().split('T')[0];
+          if (parsed && parsed.date === today && Array.isArray(parsed.plan) && parsed.plan.length > 0) {
+            return parsed.plan;
+          }
+        }
+      } catch {}
+    }
+    return null;
+  });
   const [isPlanningDay, setIsPlanningDay] = useState(false);
   const [completedPlanIndices, setCompletedPlanIndices] = useState<number[]>([]);
 
@@ -206,6 +220,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       const plan = await planMyDayWithGemini(tasks, routines, appointments, language);
       setDayPlan(plan);
       setCompletedPlanIndices([]);
+      if (typeof window !== 'undefined' && plan && plan.length > 0) {
+        try {
+          const today = new Date().toISOString().split('T')[0];
+          localStorage.setItem('produttivita_day_plan', JSON.stringify({ date: today, plan }));
+        } catch {}
+      }
     } catch (e) {
       console.error('Failed to plan day:', e);
     } finally {
@@ -331,7 +351,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   {language === 'en' ? 'Regenerate' : 'Rigenera'}
                 </button>
                 <button
-                  onClick={() => setDayPlan(null)}
+                  onClick={() => {
+                    setDayPlan(null);
+                    if (typeof window !== 'undefined') {
+                      try { localStorage.removeItem('produttivita_day_plan'); } catch {}
+                    }
+                  }}
                   className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                 >
                   <X size={18} />

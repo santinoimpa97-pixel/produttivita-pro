@@ -73,16 +73,37 @@ export interface DayPlanItem {
 /**
  * Generates a motivational quote using the Gemini API.
  */
-export const generateMotivationalQuote = async (language: Language = 'it'): Promise<string> => {
+export const generateMotivationalQuote = async (language: Language = 'it', forceRefresh: boolean = false): Promise<string> => {
+    // Check local cache first if not forced
+    if (!forceRefresh && typeof window !== 'undefined') {
+      try {
+        const cachedRaw = localStorage.getItem('produttivita_cached_quote');
+        if (cachedRaw) {
+          const parsed = JSON.parse(cachedRaw);
+          const now = Date.now();
+          // Valid for 12 hours
+          if (parsed && parsed.quote && parsed.lang === language && (now - parsed.timestamp < 12 * 60 * 60 * 1000)) {
+            return parsed.quote;
+          }
+        }
+      } catch (e) {
+        // ignore cache error
+      }
+    }
+
     try {
         const langInstruction = language === 'en'
-            ? `Generate a fresh, unique, concise and deeply inspiring motivational quote suitable for a high-performance productivity app. Variety seed: ${new Date().toISOString()}. The quote must be strictly in English.`
-            : `Genera una frase motivazionale sempre fresca, unica, concisa e profondamente ispirante, perfetta per un'app di alta produttività. Seme varietà: ${new Date().toISOString()}. La frase deve essere rigorosamente in italiano.`;
+            ? `Generate a fresh, unique, concise and deeply inspiring motivational quote for a productivity app (strictly 1 sentence).`
+            : `Genera una frase motivazionale sempre fresca, unica, concisa e profondamente ispirante per un'app di produttività (rigorosamente 1 sola frase breve).`;
 
         const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
             contents: langInstruction + " Provide the response in JSON format with a single key 'quote'.",
             config: {
+                maxOutputTokens: 60,
+                thinkingConfig: {
+                    thinkingBudget: 0,
+                },
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.OBJECT,
@@ -107,7 +128,17 @@ export const generateMotivationalQuote = async (language: Language = 'it'): Prom
         const result: { quote: string } = JSON.parse(jsonStr);
 
         if (result && typeof result.quote === 'string' && result.quote.trim() !== '') {
-            return result.quote.trim();
+            const finalQuote = result.quote.trim();
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.setItem('produttivita_cached_quote', JSON.stringify({
+                  quote: finalQuote,
+                  lang: language,
+                  timestamp: Date.now()
+                }));
+              } catch {}
+            }
+            return finalQuote;
         }
 
         return language === 'en' 
@@ -135,6 +166,10 @@ export const generateSubtasksFromGemini = async (taskText: string, language: Lan
       model: "gemini-2.5-flash", 
       contents: prompt,
       config: {
+        maxOutputTokens: 200,
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -183,6 +218,10 @@ export const generateRoutineTasks = async (routineName: string, language: Langua
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
+        maxOutputTokens: 250,
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -259,6 +298,10 @@ Fornisci un JSON valido con una chiave "plan" contenente una lista di oggetti co
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
+        maxOutputTokens: 600,
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -313,19 +356,18 @@ export const chatWithAssistant = async (
         const systemPrompt = language === 'en'
             ? `You are the user's personal elite productivity coach and strategic assistant.
 You know the following about the user:
-- Bio & Context: ${profile.bio || 'Not specified'}
+- Profile & Bio: ${profile.bio || 'Not specified'}
 - Strengths: ${profile.strengths || 'Not specified'}
-- Weaknesses & Obstacles: ${profile.weaknesses || 'Not specified'}
-- Rules & Tone of voice: ${profile.rules || 'Be motivating, concise, empathetic and actionable.'}
-- Current Date: ${todayStr}
+- Weaknesses & Bottlenecks: ${profile.weaknesses || 'Not specified'}
+- Rules & Tone: ${profile.rules || 'Be encouraging, concise, empathetic, and action-oriented.'}
+- Today's date: ${todayStr}
 
 CRITICAL STYLE & LENGTH RULES:
-- Keep your answers VERY CONCISE, sharp and direct (maximum 2 to 4 sentences or 3 bullet points).
-- NEVER produce long walls of text or lengthy preambles. The user wants a clean, compact and punchy chat interface.
+- Be EXTREMELY CONCISE, direct, and compact (max 2 to 3 short sentences or max 3 brief bullet points).
+- NEVER produce walls of text or verbose introductions. The user expects instant, actionable clarity.
 
-Capabilities:
-You can directly execute actions when the user asks you to create or schedule something!
-If the user asks you to add or create an item, include at the very end of your response a special block:
+Action Execution:
+If the user asks to add a task, appointment, note, or goal, include the action JSON block at the bottom of your message:
 \`\`\`action
 {"type":"create_task","payload":{"text":"...","priority":"Alta"|"Media"|"Bassa","dueDate":"YYYY-MM-DD"|null}}
 \`\`\`
@@ -352,7 +394,7 @@ Informazioni sull'utente:
 - Data odierna: ${todayStr}
 
 REGOLE CRITICHE DI STILE E LUNGHEZZA:
-- Sii SEMPRE ESTREMAMENTE CONCISO, diretto e compatto (massimo da 2 a 4 frasi brevi, oppure massimo 3 sintetici punti elenco).
+- Sii SEMPRE ESTREMAMENTE CONCISO, diretto e compatto (massimo da 2 a 3 frasi brevi, oppure massimo 3 sintetici punti elenco).
 - EVITA TASSATIVAMENTE muri di testo o spiegazioni prolisse. L'utente desidera una chat pulita, visivamente leggera e immediata.
 
 Capacità di esecuzione diretta:
@@ -378,7 +420,7 @@ Rispondi sempre con markdown curato, breve, compatto e motivante confermando l'a
 
         const contents: { role: string; parts: { text: string }[] }[] = [];
 
-        const recentHistory = history.slice(-10);
+        const recentHistory = history.slice(-4);
         for (const msg of recentHistory) {
             contents.push({
                 role: msg.role === 'model' ? 'model' : 'user',
@@ -396,6 +438,10 @@ Rispondi sempre con markdown curato, breve, compatto e motivante confermando l'a
             contents: contents,
             config: {
                 systemInstruction: systemPrompt,
+                maxOutputTokens: 350,
+                thinkingConfig: {
+                    thinkingBudget: 0,
+                },
             }
         });
         
