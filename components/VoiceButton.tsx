@@ -15,58 +15,89 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ onTranscript, className = '',
   const recognitionRef = React.useRef<any>(null);
 
   useEffect(() => {
+    const hasSpeech = typeof window !== 'undefined' && 
+      Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+    setIsSupported(hasSpeech);
+  }, []);
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore if already stopped
+      }
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  };
+
+  const toggleListening = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isListening) {
+      stopListening();
+      return;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      setIsSupported(true);
+    if (!SpeechRecognition) {
+      alert(
+        language === 'en'
+          ? 'Voice recognition is not supported on this device/browser.'
+          : 'Il riconoscimento vocale non è supportato su questo browser.'
+      );
+      return;
+    }
+
+    // Step 1: Explicitly request microphone stream to trigger iOS system permission dialog
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Immediately stop the tracks so speech recognition can use the hardware mic
+        stream.getTracks().forEach(t => t.stop());
+      } catch (err: any) {
+        console.warn('Microphone permission request failed:', err);
+        alert(
+          language === 'en'
+            ? 'Microphone access is blocked.\nOn iPhone, go to Settings > Safari > Microphone (or Settings > Safari > Advanced > Website Data) and set it to Allow.'
+            : 'Accesso al microfono non consentito.\nSu iPhone vai in: Impostazioni > Safari > Microfono (in basso) e seleziona "Consenti".'
+        );
+        return;
+      }
+    }
+
+    // Step 2: Instantiate SpeechRecognition fresh inside the click gesture
+    try {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
       recognition.lang = language === 'en' ? 'en-US' : 'it-IT';
 
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
+        const transcript = event.results?.[0]?.[0]?.transcript;
         if (transcript) {
           onTranscript(transcript);
         }
-        setIsListening(false);
+        stopListening();
       };
 
       recognition.onerror = (event: any) => {
-        setIsListening(false);
-        if (event?.error === 'not-allowed') {
-          alert(
-            language === 'en'
-              ? 'Microphone access is blocked. Please allow microphone in your browser settings (tap "aA" in Safari address bar -> Website Settings -> Microphone -> Allow).'
-              : 'Accesso al microfono bloccato. Per riattivarlo: tocca l\'icona "aA" nella barra indirizzi di Safari -> Impostazioni sito web -> Microfono -> Consenti.'
-          );
-        }
+        console.warn('Speech recognition error:', event);
+        stopListening();
       };
 
       recognition.onend = () => {
-        setIsListening(false);
+        stopListening();
       };
 
       recognitionRef.current = recognition;
-    }
-  }, [language, onTranscript]);
-
-  const toggleListening = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!recognitionRef.current) return;
-
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      try {
-        recognitionRef.current.lang = language === 'en' ? 'en-US' : 'it-IT';
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch (err) {
-        console.warn('Speech recognition start failed:', err);
-        setIsListening(false);
-      }
+      recognition.start();
+      setIsListening(true);
+    } catch (err) {
+      console.error('Failed to start speech recognition:', err);
+      stopListening();
     }
   };
 
