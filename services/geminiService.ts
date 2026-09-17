@@ -435,3 +435,48 @@ Rispondi sempre con markdown curato, breve, compatto e motivante confermando l'a
         };
     }
 };
+
+export const transcribeAudioWithGemini = async (audioBlob: Blob, language: string = 'it'): Promise<string> => {
+  const ai = getAi();
+
+  const base64Data = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      const base64 = result?.split(',')[1] || '';
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(audioBlob);
+  });
+
+  if (!base64Data) {
+    throw new Error('Nessun dato audio rilevato.');
+  }
+
+  let mimeType = audioBlob.type || 'audio/mp4';
+  if (mimeType.includes(';')) {
+    mimeType = mimeType.split(';')[0];
+  }
+
+  const prompt = language === 'en'
+    ? 'Accurately transcribe all spoken words in this audio. Return ONLY the transcribed text, with proper capitalization and punctuation. Do not include markdown code blocks, quotes, or any explanations.'
+    : 'Trascrivi con la massima precisione tutte le parole pronunciate in questo audio. Restituisci ESCLUSIVAMENTE il testo trascritto, con punteggiatura e lettere maiuscole corrette. Non aggiungere virgolette, blocchi markdown, spiegazioni o saluti.';
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [
+      {
+        inlineData: {
+          mimeType,
+          data: base64Data
+        }
+      },
+      {
+        text: prompt
+      }
+    ]
+  });
+
+  return (response.text || '').trim();
+};

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Mic, Square, Loader2 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { transcribeAudioWithGemini } from '../services/geminiService';
 
 interface VoiceButtonProps {
   onTranscript: (text: string) => void;
@@ -10,111 +11,194 @@ interface VoiceButtonProps {
 
 const VoiceButton: React.FC<VoiceButtonProps> = ({ onTranscript, className = '', size = 16 }) => {
   const { language } = useLanguage();
-  const [isListening, setIsListening] = useState(false);
-  const [isSupported, setIsSupported] = useState(false);
-  const recognitionRef = React.useRef<any>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
 
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<any>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Clean up on unmount
   useEffect(() => {
-    const hasSpeech = typeof window !== 'undefined' && 
-      Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
-    setIsSupported(hasSpeech);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+      }
+    };
   }, []);
 
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // ignore if already stopped
-      }
-      recognitionRef.current = null;
+  const stopAndProcessRecording = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
-    setIsListening(false);
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {
+        console.warn('Error stopping mediaRecorder:', e);
+      }
+    }
+    setIsRecording(false);
   };
 
-  const toggleListening = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (isListening) {
-      stopListening();
-      return;
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
+  const startRecording = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert(
         language === 'en'
-          ? 'Voice recognition is not supported on this device/browser.'
-          : 'Il riconoscimento vocale non è supportato su questo browser.'
+          ? 'Audio recording is not supported on this browser.'
+          : 'La registrazione audio non è supportata su questo browser.'
       );
       return;
     }
 
-    // Step 1: Explicitly request microphone stream to trigger iOS system permission dialog
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Immediately stop the tracks so speech recognition can use the hardware mic
-        stream.getTracks().forEach(t => t.stop());
-      } catch (err: any) {
-        console.warn('Microphone permission request failed:', err);
-        alert(
-          language === 'en'
-            ? 'Microphone access is blocked.\nOn iPhone, go to Settings > Safari > Microphone (or Settings > Safari > Advanced > Website Data) and set it to Allow.'
-            : 'Accesso al microfono non consentito.\nSu iPhone vai in: Impostazioni > Safari > Microfono (in basso) e seleziona "Consenti".'
-        );
-        return;
-      }
-    }
+    audioChunksRef.current = [];
+    setRecordSeconds(0);
 
-    // Step 2: Instantiate SpeechRecognition fresh inside the click gesture
     try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = language === 'en' ? 'en-US' : 'it-IT';
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+      streamRef.current = stream;
 
-      recognition.onresult = (event: any) => {
-        const transcript = event.results?.[0]?.[0]?.transcript;
-        if (transcript) {
-          onTranscript(transcript);
+      // Select best supported MIME type
+      let mimeType = '';
+      const types = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/aac',
+        'audio/ogg'
+      ];
+      for (const t of types) {
+        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t)) {
+          mimeType = t;
+          break;
         }
-        stopListening();
+      }
+
+      const recorder = mimeType 
+        ? new MediaRecorder(stream, { mimeType }) 
+        : new MediaRecorder(stream);
+
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
-      recognition.onerror = (event: any) => {
-        console.warn('Speech recognition error:', event);
-        stopListening();
+      recorder.onstop = async () => {
+        // Release hardware mic tracks
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(t => t.stop());
+          streamRef.current = null;
+        }
+
+        const currentMime = recorder.mimeType || 'audio/mp4';
+        const audioBlob = new Blob(audioChunksRef.current, { type: currentMime });
+
+        if (audioBlob.size > 500) {
+          setIsTranscribing(true);
+          try {
+            const transcribed = await transcribeAudioWithGemini(audioBlob, language);
+            if (transcribed && transcribed.trim()) {
+              onTranscript(transcribed.trim());
+            }
+          } catch (err: any) {
+            console.error('Transcription error:', err);
+            alert(
+              language === 'en'
+                ? `Transcription error: ${err?.message || 'Please check Gemini API key in Profile'}`
+                : `Errore trascrizione: ${err?.message || 'Verifica la chiave API Gemini nel Profilo'}`
+            );
+          } finally {
+            setIsTranscribing(false);
+          }
+        } else {
+          setIsTranscribing(false);
+        }
       };
 
-      recognition.onend = () => {
-        stopListening();
-      };
+      recorder.start(250); // collect chunks every 250ms
+      setIsRecording(true);
 
-      recognitionRef.current = recognition;
-      recognition.start();
-      setIsListening(true);
-    } catch (err) {
-      console.error('Failed to start speech recognition:', err);
-      stopListening();
+      // Start elapsed timer and auto-stop after 45 seconds
+      let sec = 0;
+      timerRef.current = setInterval(() => {
+        sec += 1;
+        setRecordSeconds(sec);
+        if (sec >= 45) {
+          stopAndProcessRecording();
+        }
+      }, 1000);
+
+    } catch (err: any) {
+      console.error('Error starting audio recording:', err);
+      alert(
+        language === 'en'
+          ? 'Microphone permission blocked.\nOn iPhone: go to Settings > Safari > Microphone and select Allow.'
+          : 'Accesso al microfono non consentito.\nSu iPhone vai in: Impostazioni > Safari > Microfono e seleziona "Consenti".'
+      );
+      setIsRecording(false);
+      setIsTranscribing(false);
     }
   };
 
-  if (!isSupported) return null;
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isTranscribing) return;
+
+    if (isRecording) {
+      stopAndProcessRecording();
+    } else {
+      startRecording();
+    }
+  };
 
   return (
     <button
       type="button"
-      onClick={toggleListening}
-      className={`p-2 rounded-xl transition-all ${
-        isListening
-          ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-500/30'
+      onClick={handleClick}
+      disabled={isTranscribing}
+      className={`relative inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all select-none ${
+        isRecording
+          ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-500/40 ring-2 ring-rose-400'
+          : isTranscribing
+          ? 'bg-brand-500/20 text-brand-600 dark:text-brand-400 cursor-wait'
           : 'text-slate-400 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-slate-800'
       } ${className}`}
-      title={isListening ? (language === 'en' ? 'Listening...' : 'In ascolto...') : (language === 'en' ? 'Voice dictation' : 'Dettatura vocale')}
+      title={
+        isRecording
+          ? (language === 'en' ? `Recording (${recordSeconds}s) - Tap to send` : `In ascolto (${recordSeconds}s) - Tocca per trascrivere`)
+          : isTranscribing
+          ? (language === 'en' ? 'Transcribing with AI...' : 'Trascrizione IA in corso...')
+          : (language === 'en' ? 'Voice dictation (AI powered)' : 'Dettatura vocale con IA')
+      }
     >
-      {isListening ? <MicOff size={size} /> : <Mic size={size} />}
+      {isTranscribing ? (
+        <>
+          <Loader2 size={size} className="animate-spin text-brand-600 dark:text-brand-400" />
+          <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">IA...</span>
+        </>
+      ) : isRecording ? (
+        <>
+          <Square size={size - 2} className="fill-current text-white animate-bounce" />
+          <span className="text-[11px] font-mono font-bold">{recordSeconds}s</span>
+        </>
+      ) : (
+        <Mic size={size} />
+      )}
     </button>
   );
 };
