@@ -54,7 +54,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onSetView }) => {
   ];
 
   return (
-    <footer className="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] max-w-md bg-white/85 dark:bg-slate-950/85 backdrop-blur-2xl border border-slate-200/90 dark:border-slate-800/90 z-40 rounded-[2rem] shadow-2xl shadow-slate-900/10 px-2 py-1">
+    <footer className="md:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] max-w-md bg-white/85 dark:bg-slate-950/85 backdrop-blur-2xl border border-slate-200/90 dark:border-slate-800/90 z-40 rounded-[2rem] shadow-2xl shadow-slate-900/10 px-2 py-1 select-none">
       <div className="flex items-center justify-around">
         {navItems.map(item => (
           <NavItem

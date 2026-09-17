@@ -29,7 +29,7 @@ const Header: React.FC<HeaderProps> = ({
   isRefreshingQuote = false,
 }) => {
   return (
-    <header className="sticky top-0 z-30 px-4 py-3 sm:px-6 bg-white/60 dark:bg-[#070b14]/60 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60">
+    <header className="sticky top-0 z-30 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:px-6 bg-white/60 dark:bg-[#070b14]/60 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 select-none">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
         {/* Mobile Brand / Desktop Title */}
         <div className="flex items-center gap-3">
