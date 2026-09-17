@@ -19,6 +19,18 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              supabase: ['@supabase/supabase-js'],
+              motion: ['framer-motion'],
+              charts: ['recharts'],
+              genai: ['@google/genai'],
+            }
+          }
+        }
       }
     };
 });

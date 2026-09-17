@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Priority } from '../types';
 import { Plus, Calendar, Flag } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import VoiceButton from './VoiceButton';
 
 interface TaskInputProps {
   onAddTask: (text: string, priority: Priority, dueDate: string | null) => void;
@@ -28,15 +29,20 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask }) => {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <label htmlFor="task-text" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('tasks_add_placeholder')}</label>
-          <input
-            id="task-text"
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={t('tasks_add_placeholder')}
-            className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none transition-all font-medium"
-            required
-          />
+          <div className="relative">
+            <input
+              id="task-text"
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={t('tasks_add_placeholder')}
+              className="w-full pl-5 pr-12 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-2xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none transition-all font-medium"
+              required
+            />
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+              <VoiceButton onTranscript={(spoken) => setText(prev => prev ? `${prev} ${spoken}` : spoken)} />
+            </div>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

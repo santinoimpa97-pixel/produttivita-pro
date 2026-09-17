@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { User, Lock, Mail, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
+import { User, Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import BrandLogo from './BrandLogo';
 
 type AuthMode = 'login' | 'register' | 'forgotPassword';
 
@@ -104,8 +105,8 @@ const AuthView: React.FC = () => {
         return (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center space-y-2">
-                    <div className="bg-brand-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto shadow-xl shadow-brand-500/20 mb-4">
-                        <Sparkles size={24} className="text-white" />
+                    <div className="flex justify-center mb-4">
+                        <BrandLogo size={56} className="shadow-2xl shadow-brand-500/30" />
                     </div>
                     <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">Produttività <span className="text-brand-600">Pro</span></h1>
                     <p className="text-slate-500 dark:text-slate-400 font-medium">{mode === 'login' ? t('auth_welcome_back') : t('auth_start_journey')}</p>
