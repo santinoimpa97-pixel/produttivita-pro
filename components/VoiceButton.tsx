@@ -31,8 +31,15 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ onTranscript, className = '',
         setIsListening(false);
       };
 
-      recognition.onerror = () => {
+      recognition.onerror = (event: any) => {
         setIsListening(false);
+        if (event?.error === 'not-allowed') {
+          alert(
+            language === 'en'
+              ? 'Microphone access is blocked. Please allow microphone in your browser settings (tap "aA" in Safari address bar -> Website Settings -> Microphone -> Allow).'
+              : 'Accesso al microfono bloccato. Per riattivarlo: tocca l\'icona "aA" nella barra indirizzi di Safari -> Impostazioni sito web -> Microfono -> Consenti.'
+          );
+        }
       };
 
       recognition.onend = () => {
