@@ -534,14 +534,165 @@ export interface AiWorkoutParams {
   notes?: string;
 }
 
+/**
+ * Built-in Personal Trainer Engine.
+ * Generates tailored, scientifically sound gym routines using the app's exact exercises.
+ * Used whenever Gemini is offline, API key is suspended/missing, or network is unavailable.
+ */
+export const buildTailoredWorkoutRoutines = (
+  params: AiWorkoutParams,
+  language: Language = 'it'
+): WorkoutRoutine[] => {
+  const isEn = language === 'en';
+  const isBeginner = params.experienceLevel === 'beginner';
+
+  // Determine sets, reps, and rests based on goal
+  let defaultReps = 10;
+  let defaultSetsCount = 3;
+  let defaultRest = 90;
+  let repRangeLabel = isEn ? '3x10-12 reps' : '3 serie da 10-12 ripetizioni';
+
+  const goalLower = params.goal.toLowerCase();
+  if (goalLower.includes('massa') || goalLower.includes('mass') || goalLower.includes('ipertrofia')) {
+    defaultReps = 10;
+    defaultSetsCount = 3;
+    defaultRest = 90;
+    repRangeLabel = isEn ? '3x8-10 reps • Controlled eccentrics' : '3x8-10 reps • Movimento controllato';
+  } else if (goalLower.includes('definizione') || goalLower.includes('tonif') || goalLower.includes('toning')) {
+    defaultReps = 12;
+    defaultSetsCount = 3;
+    defaultRest = 60;
+    repRangeLabel = isEn ? '3x12-15 reps • Short rest intervals' : '3x12-15 reps • Recuperi brevi';
+  } else if (goalLower.includes('dimagr') || goalLower.includes('fat') || goalLower.includes('cardio')) {
+    defaultReps = 15;
+    defaultSetsCount = 3;
+    defaultRest = 60;
+    repRangeLabel = isEn ? '3x15 reps • High metabolic output' : '3x15 reps • Ritmo sostenuto';
+  } else {
+    defaultReps = 8;
+    defaultSetsCount = 3;
+    defaultRest = 90;
+    repRangeLabel = isEn ? '3x8-10 reps • Strict technique' : '3x8-10 reps • Massima postura';
+  }
+
+  const createExercise = (
+    exId: string,
+    nameIt: string,
+    nameEn: string,
+    group: MuscleGroup,
+    weightKg: number,
+    notes?: string
+  ): WorkoutExercise => ({
+    id: `we-gen-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    exerciseId: exId,
+    name: isEn ? nameEn : nameIt,
+    muscleGroup: group,
+    targetRestSeconds: defaultRest,
+    notes: notes || repRangeLabel,
+    sets: Array.from({ length: defaultSetsCount }, (_, idx) => ({
+      id: `s-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+      setNumber: idx + 1,
+      reps: defaultReps,
+      weightKg,
+      completed: false,
+    }))
+  });
+
+  const routines: WorkoutRoutine[] = [];
+
+  if (params.daysPerWeek === 4) {
+    // 4 Days Split: Upper A, Lower A
+    routines.push({
+      id: `routine-ai-${Date.now()}-1`,
+      title: isEn ? 'Upper Body (Chest, Back, Shoulders)' : 'Upper Body (Petto, Dorso, Spalle)',
+      dayTag: isEn ? 'Day 1' : 'Giorno 1',
+      description: isEn 
+        ? 'Compound push and pull movements for upper body strength and posture.' 
+        : 'Sessione spinta e tirata per petto, dorso e spalle.',
+      estimatedDurationMin: 45,
+      exercises: [
+        createExercise('chest-press-machine', 'Chest Press Machine', 'Chest Press Machine', 'chest', isBeginner ? 25 : 40),
+        createExercise('lat-pulldown', 'Lat Machine al Petto', 'Lat Pulldown', 'back', isBeginner ? 30 : 45),
+        createExercise('shoulder-press-db', 'Lento Avanti con Manubri', 'Dumbbell Shoulder Press', 'shoulders', isBeginner ? 8 : 12),
+        createExercise('seated-cable-row', 'Pulley Basso', 'Seated Cable Row', 'back', isBeginner ? 25 : 35),
+        createExercise('dumbbell-curl', 'Curl Manubri Bicipiti', 'Dumbbell Bicep Curl', 'arms', isBeginner ? 8 : 12),
+        createExercise('tricep-pushdown', 'Pushdown Corda Tricipiti', 'Cable Tricep Pushdown', 'arms', isBeginner ? 12 : 18),
+      ]
+    });
+
+    routines.push({
+      id: `routine-ai-${Date.now()}-2`,
+      title: isEn ? 'Lower Body & Core' : 'Lower Body & Addome',
+      dayTag: isEn ? 'Day 2' : 'Giorno 2',
+      description: isEn 
+        ? 'Leg strength, knee stabilization, and core endurance.' 
+        : 'Lavoro completo su gambe, glutei e stabilità del core.',
+      estimatedDurationMin: 45,
+      exercises: [
+        createExercise('leg-press', 'Leg Press a 45°', '45° Leg Press', 'legs', isBeginner ? 40 : 80),
+        createExercise('goblet-squat', 'Goblet Squat con Manubrio', 'Goblet Squat', 'legs', isBeginner ? 10 : 16),
+        createExercise('leg-extension', 'Leg Extension', 'Leg Extension Machine', 'legs', isBeginner ? 20 : 35),
+        createExercise('leg-curl', 'Leg Curl Femorali', 'Leg Curl Machine', 'legs', isBeginner ? 20 : 30),
+        createExercise('plank', 'Plank Isometrico', 'Plank', 'core', 0, isEn ? '3x30-45 sec' : '3 serie da 30-45 secondi'),
+        createExercise('cable-crunch', 'Crunch Addominali', 'Floor Crunch', 'core', 0),
+      ]
+    });
+  } else {
+    // 2 or 3 Days: Full Body A & Full Body B
+    routines.push({
+      id: `routine-ai-${Date.now()}-1`,
+      title: isEn ? `Full Body ${params.daysPerWeek}x - Day A (Foundations)` : `Full Body ${params.daysPerWeek}x - Scheda A (Fondamentali)`,
+      dayTag: isEn ? 'Day A' : 'Giorno A',
+      description: isEn 
+        ? 'Complete stimulus across major muscle groups with safe, progressive machine and free weight movements.' 
+        : 'Stimolo completo sui grandi gruppi muscolari con macchine guidate e carichi sicuri per iniziare al meglio.',
+      estimatedDurationMin: 45,
+      exercises: [
+        createExercise('leg-press', 'Leg Press a 45°', '45° Leg Press', 'legs', isBeginner ? 40 : 60),
+        createExercise('chest-press-machine', 'Chest Press Machine', 'Chest Press Machine', 'chest', isBeginner ? 25 : 35),
+        createExercise('lat-pulldown', 'Lat Machine al Petto', 'Lat Pulldown', 'back', isBeginner ? 30 : 40),
+        createExercise('shoulder-press-db', 'Lento Avanti con Manubri', 'Dumbbell Shoulder Press', 'shoulders', isBeginner ? 8 : 12),
+        createExercise('dumbbell-curl', 'Curl Manubri Bicipiti', 'Dumbbell Bicep Curl', 'arms', isBeginner ? 8 : 10),
+        createExercise('plank', 'Plank Isometrico', 'Plank', 'core', 0, isEn ? '3x30-45 sec' : '3x30-45 sec tenuta'),
+      ]
+    });
+
+    routines.push({
+      id: `routine-ai-${Date.now()}-2`,
+      title: isEn ? `Full Body ${params.daysPerWeek}x - Day B (Variation)` : `Full Body ${params.daysPerWeek}x - Scheda B (Variante)`,
+      dayTag: isEn ? 'Day B' : 'Giorno B',
+      description: isEn 
+        ? 'Complementary compound movements with dumbbells and cables for muscular balance.' 
+        : 'Esercizi complementari con manubri e cavi per equilibrio muscolare e braccia.',
+      estimatedDurationMin: 45,
+      exercises: [
+        createExercise('goblet-squat', 'Goblet Squat con Manubrio', 'Goblet Squat', 'legs', isBeginner ? 10 : 14),
+        createExercise('incline-db-press', 'Spinte Manubri Panca Inclinata', 'Incline DB Press', 'chest', isBeginner ? 10 : 14),
+        createExercise('seated-cable-row', 'Pulley Basso al Bacino', 'Seated Cable Row', 'back', isBeginner ? 25 : 35),
+        createExercise('lateral-raises', 'Alzate Laterali Manubri', 'Lateral Raises', 'shoulders', isBeginner ? 5 : 7),
+        createExercise('tricep-pushdown', 'Pushdown Corda Tricipiti', 'Cable Tricep Pushdown', 'arms', isBeginner ? 12 : 18),
+        createExercise('cable-crunch', 'Crunch Addome a Terra', 'Floor Crunch', 'core', 0),
+      ]
+    });
+  }
+
+  return routines;
+};
+
 export const generateWorkoutRoutinesWithGemini = async (
   params: AiWorkoutParams,
   language: Language = 'it'
 ): Promise<WorkoutRoutine[]> => {
-  const ai = getAi();
-  
-  const prompt = language === 'en'
-    ? `You are an elite personal trainer. Generate a personalized gym routine plan for a ${params.experienceLevel} trainee.
+  try {
+    const key = getEffectiveGeminiApiKey();
+    if (!key) {
+      return buildTailoredWorkoutRoutines(params, language);
+    }
+
+    const ai = getAi();
+    
+    const prompt = language === 'en'
+      ? `You are an elite personal trainer. Generate a personalized gym routine plan for a ${params.experienceLevel} trainee.
 Days per week: ${params.daysPerWeek}.
 Goal: ${params.goal}.
 Additional notes: ${params.notes || 'None'}.
@@ -579,8 +730,8 @@ Return a JSON object with this exact structure:
     }
   ]
 }
-Generate ${params.daysPerWeek >= 3 ? (params.daysPerWeek === 4 ? 2 : 2) : 1} routines (e.g. Day A, Day B). Include 5-6 exercises per routine.`
-    : `Sei un personal trainer certificato di alto livello. Crea un piano di allenamento personalizzato per una persona che è al livello: ${params.experienceLevel === 'beginner' ? 'Principiante in palestra (ha iniziato da poco)' : 'Intermedio'}.
+Generate ${params.daysPerWeek >= 2 ? 2 : 1} routines. Include 5-6 exercises per routine.`
+      : `Sei un personal trainer certificato di alto livello. Crea un piano di allenamento personalizzato per una persona che è al livello: ${params.experienceLevel === 'beginner' ? 'Principiante in palestra (ha iniziato da poco)' : 'Intermedio'}.
 Frequenza settimanale: ${params.daysPerWeek} giorni a settimana.
 Obiettivo: ${params.goal}.
 Note/Preferenze: ${params.notes || 'Nessuna'}.
@@ -620,44 +771,59 @@ Rispondi ESCLUSIVAMENTE con un JSON valido con questa struttura esatta:
 }
 Genera ${params.daysPerWeek >= 2 ? 2 : 1} schede (es. Giorno A e Giorno B) bilanciate, con 5-6 esercizi ciascuna, serie da 3 o 4, ripetizioni e carichi di partenza ragionevoli per chi inizia.`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      responseMimeType: 'application/json',
-      maxOutputTokens: 1500,
-      thinkingConfig: { thinkingBudget: 0 }
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        maxOutputTokens: 1500,
+        thinkingConfig: { thinkingBudget: 0 }
+      }
+    });
+
+    let rawText = (response.text || '').trim();
+    if (rawText.startsWith('```json')) {
+      rawText = rawText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (rawText.startsWith('```')) {
+      rawText = rawText.replace(/^```\s*/, '').replace(/\s*```$/, '');
     }
-  });
 
-  const parsed = JSON.parse(response.text || '{}');
-  const rawRoutines = parsed.routines || [];
+    const parsed = JSON.parse(rawText || '{}');
+    const rawRoutines = parsed.routines || [];
 
-  return rawRoutines.map((r: any, rIdx: number) => ({
-    id: `ai-routine-${Date.now()}-${rIdx}`,
-    title: r.title || `Scheda ${r.dayTag || rIdx + 1}`,
-    dayTag: r.dayTag || `Giorno ${String.fromCharCode(65 + rIdx)}`,
-    description: r.description || 'Scheda personalizzata generata dal Coach IA',
-    estimatedDurationMin: r.estimatedDurationMin || 45,
-    exercises: (r.exercises || []).map((ex: any, exIdx: number) => ({
-      id: `ai-ex-${Date.now()}-${rIdx}-${exIdx}`,
-      exerciseId: ex.exerciseId || 'chest-press-machine',
-      name: ex.name || 'Esercizio',
-      muscleGroup: (ex.muscleGroup || 'chest') as MuscleGroup,
-      targetRestSeconds: ex.targetRestSeconds || 90,
-      notes: ex.notes || 'Controlla il movimento',
-      sets: (ex.sets || [
-        { setNumber: 1, reps: 10, weightKg: 20 },
-        { setNumber: 2, reps: 10, weightKg: 20 },
-        { setNumber: 3, reps: 10, weightKg: 20 }
-      ]).map((s: any, sIdx: number) => ({
-        id: `s-${Date.now()}-${rIdx}-${exIdx}-${sIdx}`,
-        setNumber: s.setNumber || sIdx + 1,
-        reps: s.reps || 10,
-        weightKg: s.weightKg || 15,
-        completed: false
+    if (!Array.isArray(rawRoutines) || rawRoutines.length === 0) {
+      return buildTailoredWorkoutRoutines(params, language);
+    }
+
+    return rawRoutines.map((r: any, rIdx: number) => ({
+      id: `ai-routine-${Date.now()}-${rIdx}`,
+      title: r.title || `Scheda ${r.dayTag || rIdx + 1}`,
+      dayTag: r.dayTag || `Giorno ${String.fromCharCode(65 + rIdx)}`,
+      description: r.description || 'Scheda personalizzata generata dal Coach IA',
+      estimatedDurationMin: r.estimatedDurationMin || 45,
+      exercises: (r.exercises || []).map((ex: any, exIdx: number) => ({
+        id: `ai-ex-${Date.now()}-${rIdx}-${exIdx}`,
+        exerciseId: ex.exerciseId || 'chest-press-machine',
+        name: ex.name || 'Esercizio',
+        muscleGroup: (ex.muscleGroup || 'chest') as MuscleGroup,
+        targetRestSeconds: ex.targetRestSeconds || 90,
+        notes: ex.notes || 'Controlla il movimento',
+        sets: (ex.sets || [
+          { setNumber: 1, reps: 10, weightKg: 20 },
+          { setNumber: 2, reps: 10, weightKg: 20 },
+          { setNumber: 3, reps: 10, weightKg: 20 }
+        ]).map((s: any, sIdx: number) => ({
+          id: `s-${Date.now()}-${rIdx}-${exIdx}-${sIdx}`,
+          setNumber: s.setNumber || sIdx + 1,
+          reps: s.reps || 10,
+          weightKg: s.weightKg || 15,
+          completed: false
+        }))
       }))
-    }))
-  }));
+    }));
+  } catch (error) {
+    console.warn('Gemini API call failed or suspended key, falling back to local personal trainer generator:', error);
+    return buildTailoredWorkoutRoutines(params, language);
+  }
 };
 
