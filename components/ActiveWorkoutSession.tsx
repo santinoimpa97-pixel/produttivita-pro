@@ -177,7 +177,7 @@ export const ActiveWorkoutSession: React.FC<ActiveWorkoutSessionProps> = ({
   return (
     <div className="space-y-6 pb-36 animate-in fade-in duration-300">
       {/* Sticky Active Workout Header */}
-      <div className="sticky top-16 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3.5 bg-white/95 dark:bg-[#070b14]/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 shadow-md flex items-center justify-between">
+      <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3.5 bg-white/95 dark:bg-[#070b14]/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 shadow-md flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-brand-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 shrink-0">
             <Dumbbell size={20} />

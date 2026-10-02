@@ -1018,7 +1018,7 @@ function App() {
 
   return (
     <LanguageContext.Provider value={{ language, t }}>
-      <div className="bg-slate-50 dark:bg-[#070b14] min-h-screen font-sans text-slate-900 dark:text-slate-100 flex relative overflow-x-hidden">
+      <div className="bg-slate-50 dark:bg-[#070b14] min-h-screen font-sans text-slate-900 dark:text-slate-100 flex relative">
         {/* Ambient background glow */}
         <div className="ambient-glow fixed inset-0 pointer-events-none z-0" />
 
@@ -1034,13 +1034,17 @@ function App() {
           onOpenCommandMenu={() => setIsCommandMenuOpen(true)}
         />
 
-        {/* Live Active Workout Fullscreen / Modal Session */}
+        {/* Live Active Workout Fullscreen Mode */}
         {activeWorkoutRoutine && (
-          <ActiveWorkoutSession
-            routine={activeWorkoutRoutine}
-            onFinishWorkout={handleFinishWorkout}
-            onCancelWorkout={() => setActiveWorkoutRoutine(null)}
-          />
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-50 dark:bg-[#070b14] flex flex-col">
+            <div className="max-w-4xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex-1">
+              <ActiveWorkoutSession
+                routine={activeWorkoutRoutine}
+                onFinishWorkout={handleFinishWorkout}
+                onCancelWorkout={() => setActiveWorkoutRoutine(null)}
+              />
+            </div>
+          </div>
         )}
 
         {/* Command Palette Modal */}

@@ -53,13 +53,26 @@
 @variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  html, body {
+  html {
     width: 100%;
     overflow-x: hidden;
-    touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
-    overscroll-behavior-y: none;
-    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* Only apply touch-action and overscroll containment on mobile touch devices */
+  @media (pointer: coarse) {
+    html, body {
+      touch-action: manipulation;
+      overscroll-behavior-y: none;
+      -webkit-overflow-scrolling: touch;
+    }
   }
 
   /* Remove tap gray flashes and callouts */
