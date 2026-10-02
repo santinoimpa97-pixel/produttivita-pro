@@ -10,6 +10,11 @@ import {
   Layers, 
   Sparkles, 
   Calendar, 
+  CalendarDays,
+  Settings2,
+  Coffee,
+  Check,
+  HeartPulse,
   Trophy, 
   CheckCircle2, 
   ChevronRight, 
@@ -26,9 +31,10 @@ import {
   WorkoutExercise, 
   ExerciseGuide, 
   MuscleGroup, 
-  CompletedWorkoutLog 
+  CompletedWorkoutLog,
+  WeeklyScheduleDay
 } from '../types';
-import { EXERCISE_GUIDES, STARTER_ROUTINES } from '../data/exercisesData';
+import { EXERCISE_GUIDES, STARTER_ROUTINES, DEFAULT_WEEKLY_SCHEDULE } from '../data/exercisesData';
 import ExerciseDetailModal from './ExerciseDetailModal';
 import { useLanguage } from '../LanguageContext';
 import { generateWorkoutRoutinesWithGemini } from '../services/geminiService';
@@ -95,6 +101,149 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
   const [aiCustomNotes, setAiCustomNotes] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+
+  // Weekly Coach Schedule State
+  const SCHEDULE_STORAGE_KEY = 'produttivita_gym_weekly_schedule_v1';
+  const [weeklySchedule, setWeeklySchedule] = useState<WeeklyScheduleDay[]>(() => {
+    try {
+      const saved = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to parse gym weekly schedule', e);
+    }
+    return DEFAULT_WEEKLY_SCHEDULE;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(weeklySchedule));
+    } catch (e) {
+      console.error('Failed to save gym weekly schedule', e);
+    }
+  }, [weeklySchedule]);
+
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
+
+  // Today day index (0 = Sun, 1 = Mon, ..., 6 = Sat)
+  const todayDayIndex = useMemo(() => new Date().getDay(), []);
+
+  // Today schedule entry
+  const todaySchedule = useMemo(() => {
+    return weeklySchedule.find(s => s.dayIndex === todayDayIndex) || weeklySchedule[0];
+  }, [weeklySchedule, todayDayIndex]);
+
+  // Is today workout done?
+  const isTodayWorkoutDone = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return workoutLogs.some(log => log.date.startsWith(todayStr));
+  }, [workoutLogs]);
+
+  // Today routine object
+  const todayRoutine = useMemo(() => {
+    if (!todaySchedule.isWorkoutDay) return null;
+    if (todaySchedule.assignedRoutineId) {
+      const found = routines.find(r => r.id === todaySchedule.assignedRoutineId);
+      if (found) return found;
+    }
+    return routines[0] || null;
+  }, [todaySchedule, routines]);
+
+  // Next workout day if today is rest day
+  const nextWorkoutDay = useMemo(() => {
+    for (let i = 1; i <= 7; i++) {
+      const checkIdx = (todayDayIndex + i) % 7;
+      const day = weeklySchedule.find(s => s.dayIndex === checkIdx);
+      if (day && day.isWorkoutDay) {
+        const assigned = routines.find(r => r.id === day.assignedRoutineId) || routines[0];
+        return { ...day, routine: assigned };
+      }
+    }
+    return null;
+  }, [weeklySchedule, todayDayIndex, routines]);
+
+  // Ordered days from Monday (1) to Sunday (0) for standard European weekly calendar
+  const orderedWeekDays = useMemo(() => {
+    const order = [1, 2, 3, 4, 5, 6, 0];
+    return order.map(idx => weeklySchedule.find(s => s.dayIndex === idx)!).filter(Boolean);
+  }, [weeklySchedule]);
+
+  // Helper to apply common weekly presets
+  const handleApplyPreset = (preset: '3-mon-wed-fri' | '3-tue-thu-sat' | '2-tue-thu' | '4-upper-lower') => {
+    const routineA = routines[0];
+    const routineB = routines[1] || routines[0];
+
+    let newSched = [...DEFAULT_WEEKLY_SCHEDULE];
+    if (preset === '3-mon-wed-fri') {
+      newSched = [
+        { dayIndex: 1, dayName: 'Lunedì', shortName: 'Lun', isWorkoutDay: true, assignedRoutineId: routineA?.id, assignedRoutineTitle: routineA?.title, assignedDayTag: routineA?.dayTag || 'Giorno A' },
+        { dayIndex: 2, dayName: 'Martedì', shortName: 'Mar', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 3, dayName: 'Mercoledì', shortName: 'Mer', isWorkoutDay: true, assignedRoutineId: routineB?.id, assignedRoutineTitle: routineB?.title, assignedDayTag: routineB?.dayTag || 'Giorno B' },
+        { dayIndex: 4, dayName: 'Giovedì', shortName: 'Gio', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 5, dayName: 'Venerdì', shortName: 'Ven', isWorkoutDay: true, assignedRoutineId: routineA?.id, assignedRoutineTitle: routineA?.title, assignedDayTag: routineA?.dayTag || 'Giorno A' },
+        { dayIndex: 6, dayName: 'Sabato', shortName: 'Sab', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 0, dayName: 'Domenica', shortName: 'Dom', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+      ];
+    } else if (preset === '3-tue-thu-sat') {
+      newSched = [
+        { dayIndex: 1, dayName: 'Lunedì', shortName: 'Lun', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 2, dayName: 'Martedì', shortName: 'Mar', isWorkoutDay: true, assignedRoutineId: routineA?.id, assignedRoutineTitle: routineA?.title, assignedDayTag: routineA?.dayTag || 'Giorno A' },
+        { dayIndex: 3, dayName: 'Mercoledì', shortName: 'Mer', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 4, dayName: 'Giovedì', shortName: 'Gio', isWorkoutDay: true, assignedRoutineId: routineB?.id, assignedRoutineTitle: routineB?.title, assignedDayTag: routineB?.dayTag || 'Giorno B' },
+        { dayIndex: 5, dayName: 'Venerdì', shortName: 'Ven', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 6, dayName: 'Sabato', shortName: 'Sab', isWorkoutDay: true, assignedRoutineId: routineA?.id, assignedRoutineTitle: routineA?.title, assignedDayTag: routineA?.dayTag || 'Giorno A' },
+        { dayIndex: 0, dayName: 'Domenica', shortName: 'Dom', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+      ];
+    } else if (preset === '2-tue-thu') {
+      newSched = [
+        { dayIndex: 1, dayName: 'Lunedì', shortName: 'Lun', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 2, dayName: 'Martedì', shortName: 'Mar', isWorkoutDay: true, assignedRoutineId: routineA?.id, assignedRoutineTitle: routineA?.title, assignedDayTag: routineA?.dayTag || 'Giorno A' },
+        { dayIndex: 3, dayName: 'Mercoledì', shortName: 'Mer', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 4, dayName: 'Giovedì', shortName: 'Gio', isWorkoutDay: true, assignedRoutineId: routineB?.id, assignedRoutineTitle: routineB?.title, assignedDayTag: routineB?.dayTag || 'Giorno B' },
+        { dayIndex: 5, dayName: 'Venerdì', shortName: 'Ven', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 6, dayName: 'Sabato', shortName: 'Sab', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 0, dayName: 'Domenica', shortName: 'Dom', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+      ];
+    } else if (preset === '4-upper-lower') {
+      newSched = [
+        { dayIndex: 1, dayName: 'Lunedì', shortName: 'Lun', isWorkoutDay: true, assignedRoutineId: routineA?.id, assignedRoutineTitle: routineA?.title, assignedDayTag: 'Upper A' },
+        { dayIndex: 2, dayName: 'Martedì', shortName: 'Mar', isWorkoutDay: true, assignedRoutineId: routineB?.id, assignedRoutineTitle: routineB?.title, assignedDayTag: 'Lower A' },
+        { dayIndex: 3, dayName: 'Mercoledì', shortName: 'Mer', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 4, dayName: 'Giovedì', shortName: 'Gio', isWorkoutDay: true, assignedRoutineId: routineA?.id, assignedRoutineTitle: routineA?.title, assignedDayTag: 'Upper B' },
+        { dayIndex: 5, dayName: 'Venerdì', shortName: 'Ven', isWorkoutDay: true, assignedRoutineId: routineB?.id, assignedRoutineTitle: routineB?.title, assignedDayTag: 'Lower B' },
+        { dayIndex: 6, dayName: 'Sabato', shortName: 'Sab', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+        { dayIndex: 0, dayName: 'Domenica', shortName: 'Dom', isWorkoutDay: false, assignedDayTag: 'Riposo' },
+      ];
+    }
+    setWeeklySchedule(newSched);
+  };
+
+  const handleToggleDay = (dayIndex: number) => {
+    setWeeklySchedule(prev => prev.map(d => {
+      if (d.dayIndex !== dayIndex) return d;
+      const nextIsWorkout = !d.isWorkoutDay;
+      const defaultRot = routines[0];
+      return {
+        ...d,
+        isWorkoutDay: nextIsWorkout,
+        assignedDayTag: nextIsWorkout ? (defaultRot?.dayTag || 'Giorno A') : 'Riposo',
+        assignedRoutineId: nextIsWorkout ? defaultRot?.id : undefined,
+        assignedRoutineTitle: nextIsWorkout ? defaultRot?.title : undefined
+      };
+    }));
+  };
+
+  const handleAssignRoutine = (dayIndex: number, routineId: string) => {
+    const selRoutine = routines.find(r => r.id === routineId);
+    setWeeklySchedule(prev => prev.map(d => {
+      if (d.dayIndex !== dayIndex) return d;
+      return {
+        ...d,
+        assignedRoutineId: routineId,
+        assignedRoutineTitle: selRoutine?.title,
+        assignedDayTag: selRoutine?.dayTag
+      };
+    }));
+  };
 
   // Filtered exercises for the library tab
   const filteredExercises = useMemo(() => {
@@ -199,46 +348,209 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Top Banner / Hero */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 text-white p-6 sm:p-8 shadow-xl shadow-emerald-950/20 border border-emerald-500/30">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-black tracking-wide text-emerald-100 uppercase">
-              <Dumbbell size={13} className="text-emerald-300" />
-              <span>{language === 'en' ? 'Fitness & Gym Companion' : 'Palestra & Fitness Tracker'}</span>
+      {/* 1. WEEKLY COACH SCHEDULE BAR */}
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+              <CalendarDays size={16} />
             </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                {language === 'en' ? 'Your Weekly Training Schedule' : 'Il Tuo Programma Settimanale'}
+              </h3>
+              <p className="text-[11px] text-slate-400">
+                {language === 'en' ? 'Follow your weekly plan day by day' : 'Giorno per giorno: sai sempre quando allenarti e quando riposare'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setIsEditingSchedule(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold transition-colors"
+          >
+            <Settings2 size={13} />
+            <span>{language === 'en' ? 'Customize Days' : 'Personalizza Giorni'}</span>
+          </button>
+        </div>
+
+        {/* 7 Days Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+          {orderedWeekDays.map(day => {
+            const isToday = day.dayIndex === todayDayIndex;
+            const assigned = routines.find(r => r.id === day.assignedRoutineId) || (day.isWorkoutDay ? routines[0] : null);
+
+            return (
+              <div
+                key={`schedule-day-${day.dayIndex}`}
+                className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between space-y-2 relative ${
+                  isToday
+                    ? 'bg-emerald-500/10 dark:bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/30 shadow-md shadow-emerald-500/10'
+                    : day.isWorkoutDay
+                    ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-800'
+                    : 'bg-slate-50/50 dark:bg-slate-900/30 border-dashed border-slate-200 dark:border-slate-800/60 opacity-75'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-black ${isToday ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {day.dayName}
+                  </span>
+                  {isToday && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-black uppercase tracking-wider">
+                      OGGI
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  {day.isWorkoutDay ? (
+                    <div className="space-y-1">
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-600 text-white text-[10px] font-bold">
+                        <Dumbbell size={10} />
+                        <span>{day.assignedDayTag || assigned?.dayTag || 'Giorno A'}</span>
+                      </div>
+                      <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate" title={assigned?.title}>
+                        {assigned ? assigned.title.replace(/Full Body 3x - /, '') : 'Scheda'}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-0.5">
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-200/80 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-semibold">
+                        <Coffee size={10} />
+                        <span>{language === 'en' ? 'Rest Day' : 'Riposo'}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        {language === 'en' ? 'Recovery' : 'Recupero'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Day status indicator */}
+                {isToday && day.isWorkoutDay && (
+                  <div className="pt-1.5 border-t border-emerald-500/20 text-[10px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    {isTodayWorkoutDone ? (
+                      <>
+                        <CheckCircle2 size={12} className="text-emerald-500" />
+                        <span>Completato!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Flame size={12} className="text-amber-500 animate-bounce" />
+                        <span>Da fare oggi!</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. TODAY'S COACH HERO DIRECTIVE */}
+      <div className={`relative overflow-hidden rounded-3xl p-6 sm:p-8 shadow-xl border transition-all ${
+        todaySchedule.isWorkoutDay && !isTodayWorkoutDone
+          ? 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 text-white border-emerald-500/30 shadow-emerald-950/25'
+          : todaySchedule.isWorkoutDay && isTodayWorkoutDone
+          ? 'bg-gradient-to-br from-teal-700 via-emerald-800 to-slate-900 text-white border-teal-500/30 shadow-teal-950/25'
+          : 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 text-white border-indigo-500/30 shadow-indigo-950/25'
+      }`}>
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2.5">
+            {/* Status Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-black tracking-wide text-white uppercase">
+              {todaySchedule.isWorkoutDay ? (
+                isTodayWorkoutDone ? (
+                  <>
+                    <CheckCircle2 size={14} className="text-emerald-300" />
+                    <span>{language === 'en' ? `Today (${todaySchedule.dayName}): Session Completed!` : `Oggi (${todaySchedule.dayName}): Allenamento Completato!`}</span>
+                  </>
+                ) : (
+                  <>
+                    <Flame size={14} className="text-amber-300" />
+                    <span>{language === 'en' ? `Today is Workout Day • ${todaySchedule.dayName}` : `Oggi è Giorno di Allenamento • ${todaySchedule.dayName}`}</span>
+                  </>
+                )
+              ) : (
+                <>
+                  <Coffee size={14} className="text-amber-300" />
+                  <span>{language === 'en' ? `Today is Rest Day • ${todaySchedule.dayName}` : `Oggi è Giorno di Riposo • ${todaySchedule.dayName}`}</span>
+                </>
+              )}
+            </div>
+
+            {/* Headline */}
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              {language === 'en' ? 'Build Strength, Track Every Set' : 'Costruisci Forza, Traccia Ogni Serie'}
+              {todaySchedule.isWorkoutDay ? (
+                isTodayWorkoutDone ? (
+                  language === 'en' ? 'Session Completed! Great job.' : 'Sessione Completata! Grande lavoro.'
+                ) : (
+                  todayRoutine ? `Oggi tocca a: ${todayRoutine.title}` : 'Oggi tocca al tuo allenamento!'
+                )
+              ) : (
+                language === 'en' ? 'Rest & Muscle Recovery Day' : 'Giorno di Riposo & Recupero Muscolare'
+              )}
             </h1>
-            <p className="text-emerald-100/90 text-sm max-w-xl font-medium">
-              {language === 'en' 
-                ? 'Anatomical muscle guides, live workout tracking with rest timers, and progressive overload for beginners.' 
-                : 'Guide visive muscolari, tracker serie/ripetizioni con timer di recupero e carichi progressivi ideali per chi inizia.'}
+
+            {/* Description */}
+            <p className="text-white/80 text-xs sm:text-sm max-w-xl font-medium leading-relaxed">
+              {todaySchedule.isWorkoutDay ? (
+                isTodayWorkoutDone ? (
+                  language === 'en'
+                    ? 'You checked off all your exercises for today. Hydrate, eat enough protein and rest up!'
+                    : 'Hai spuntato tutti i tuoi esercizi per oggi. Bevi acqua, assumi proteine e riposati per ricostruire le fibre muscolari!'
+                ) : (
+                  todayRoutine
+                    ? `${todayRoutine.exercises.length} esercizi in programma (${todayRoutine.exercises.map(e => e.name).slice(0, 3).join(', ')}...). Durata stimata ~${todayRoutine.estimatedDurationMin} minuti.`
+                    : 'Preparati, riscaldati bene e segui gli esercizi.'
+                )
+              ) : (
+                nextWorkoutDay
+                  ? `I muscoli non crescono durante la palestra, ma nei giorni di riposo! Rilassati, dormi bene. Prossima sessione: ${nextWorkoutDay.dayName} (${nextWorkoutDay.assignedDayTag || 'Allenamento'}).`
+                  : 'Giorno di rigenerazione muscolare e mentale per prepararsi alla prossima sessione.'
+              )}
             </p>
           </div>
 
-          {/* Quick CTA to start next routine */}
-          {routines.length > 0 && (
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => onStartWorkout(routines[0])}
-              className="inline-flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-white text-slate-900 hover:bg-emerald-50 font-black text-sm shadow-xl shadow-slate-950/30 shrink-0 group transition-all"
-            >
-              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-110 transition-transform">
-                <Play size={16} fill="currentColor" />
-              </div>
-              <div className="text-left">
-                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                  {language === 'en' ? 'Quick Start' : 'Avvio Rapido'}
+          {/* Primary CTA */}
+          <div className="shrink-0 flex flex-col sm:flex-row items-center gap-3">
+            {todaySchedule.isWorkoutDay && !isTodayWorkoutDone && todayRoutine && (
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => onStartWorkout(todayRoutine)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-white text-slate-900 hover:bg-emerald-50 font-black text-sm shadow-xl shadow-slate-950/30 group transition-all"
+              >
+                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-110 transition-transform">
+                  <Play size={16} fill="currentColor" />
                 </div>
-                <div className="text-slate-900 font-extrabold">
-                  {routines[0].dayTag}
+                <div className="text-left">
+                  <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                    {language === 'en' ? 'Start Today\'s Session' : 'Inizia Sessione di Oggi'}
+                  </div>
+                  <div className="text-slate-900 font-extrabold">
+                    {todayRoutine.dayTag}
+                  </div>
                 </div>
-              </div>
-            </motion.button>
-          )}
+              </motion.button>
+            )}
+
+            {/* If rest day, option to train anyway */}
+            {!todaySchedule.isWorkoutDay && routines.length > 0 && (
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => onStartWorkout(routines[0])}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs backdrop-blur-md border border-white/20 transition-all"
+              >
+                <Play size={14} fill="currentColor" />
+                <span>{language === 'en' ? 'Train anyway today' : 'Vuoi allenarti comunque oggi?'}</span>
+              </motion.button>
+            )}
+          </div>
         </div>
 
         {/* Quick Stats bar inside hero */}
@@ -1004,6 +1316,139 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Customize Weekly Schedule */}
+      <AnimatePresence>
+        {isEditingSchedule && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    <Settings2 size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-slate-900 dark:text-white text-base">
+                      {language === 'en' ? 'Customize Your Weekly Schedule' : 'Personalizza i Tuoi Giorni di Allenamento'}
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      {language === 'en' ? 'Choose which days you go to the gym and assign your routines' : 'Stabilisci in quali giorni vai in palestra e associa le tue schede'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEditingSchedule(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Fast Presets */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  {language === 'en' ? 'Quick Presets' : 'Combinazioni Consigliate:'}
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('3-mon-wed-fri')}
+                    className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all text-left"
+                  >
+                    <div className="font-black">3 Giorni</div>
+                    <div className="text-[10px] text-slate-400">Lun - Mer - Ven</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('3-tue-thu-sat')}
+                    className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all text-left"
+                  >
+                    <div className="font-black">3 Giorni</div>
+                    <div className="text-[10px] text-slate-400">Mar - Gio - Sab</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('2-tue-thu')}
+                    className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all text-left"
+                  >
+                    <div className="font-black">2 Giorni</div>
+                    <div className="text-[10px] text-slate-400">Mar - Gio</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('4-upper-lower')}
+                    className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all text-left"
+                  >
+                    <div className="font-black">4 Giorni</div>
+                    <div className="text-[10px] text-slate-400">Lun-Mar-Gio-Ven</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Day-by-Day Editor */}
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  {language === 'en' ? 'Edit Day-by-Day:' : 'Modifica Singoli Giorni:'}
+                </label>
+                {orderedWeekDays.map(day => (
+                  <div
+                    key={`edit-day-${day.dayIndex}`}
+                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70 flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleDay(day.dayIndex)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                          day.isWorkoutDay
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {day.isWorkoutDay ? 'Palestra' : 'Riposo'}
+                      </button>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">
+                          {day.dayName}
+                        </div>
+                      </div>
+                    </div>
+
+                    {day.isWorkoutDay && (
+                      <select
+                        value={day.assignedRoutineId || routines[0]?.id}
+                        onChange={e => handleAssignRoutine(day.dayIndex, e.target.value)}
+                        className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 max-w-[200px] truncate"
+                      >
+                        {routines.map(r => (
+                          <option key={r.id} value={r.id}>
+                            {r.dayTag}: {r.title}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingSchedule(false)}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md shadow-emerald-600/20"
+                >
+                  {language === 'en' ? 'Save Schedule' : 'Salva Programma'}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

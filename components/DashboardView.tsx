@@ -24,7 +24,8 @@ import {
   Dumbbell
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Task, Routine, Appointment, Goal } from '../types';
+import { Task, Routine, Appointment, Goal, WeeklyScheduleDay } from '../types';
+import { DEFAULT_WEEKLY_SCHEDULE } from '../data/exercisesData';
 import { useLanguage } from '../LanguageContext';
 import { View } from './BottomNav';
 import HabitHeatmap from './HabitHeatmap';
@@ -95,6 +96,56 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   });
   const [isPlanningDay, setIsPlanningDay] = useState(false);
   const [completedPlanIndices, setCompletedPlanIndices] = useState<number[]>([]);
+
+  // Fitness weekly coach status for today
+  const todayFitnessInfo = useMemo(() => {
+    try {
+      const savedSched = localStorage.getItem('produttivita_gym_weekly_schedule_v1');
+      const schedule: WeeklyScheduleDay[] = savedSched ? JSON.parse(savedSched) : DEFAULT_WEEKLY_SCHEDULE;
+      const todayDayIdx = new Date().getDay();
+      const todaySched = schedule.find(s => s.dayIndex === todayDayIdx) || schedule[0];
+
+      // Check if today workout was completed
+      const savedLogs = localStorage.getItem('produttivita_gym_logs_v1');
+      const logs = savedLogs ? JSON.parse(savedLogs) : [];
+      const todayStr = new Date().toISOString().split('T')[0];
+      const isDone = Array.isArray(logs) && logs.some((l: any) => l.date && l.date.startsWith(todayStr));
+
+      // Calculate next workout day
+      let nextDayName = '';
+      let nextDayTag = '';
+      if (!todaySched.isWorkoutDay) {
+        for (let i = 1; i <= 7; i++) {
+          const nextIdx = (todayDayIdx + i) % 7;
+          const nextDay = schedule.find(s => s.dayIndex === nextIdx);
+          if (nextDay && nextDay.isWorkoutDay) {
+            nextDayName = nextDay.dayName;
+            nextDayTag = nextDay.assignedDayTag || 'Allenamento';
+            break;
+          }
+        }
+      }
+
+      return {
+        ...todaySched,
+        isDone,
+        nextDayName,
+        nextDayTag
+      };
+    } catch {
+      return {
+        dayIndex: new Date().getDay(),
+        dayName: 'Oggi',
+        shortName: 'Oggi',
+        isWorkoutDay: true,
+        assignedDayTag: 'Giorno A',
+        assignedRoutineTitle: 'Full Body 3x - Scheda A',
+        isDone: false,
+        nextDayName: '',
+        nextDayTag: ''
+      };
+    }
+  }, []);
 
   // Switch timer mode
   const handleSelectTimerMode = (mode: TimerMode) => {
@@ -676,36 +727,74 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Card 5: Fitness & Gym Routine Bento */}
-        <div className="md:col-span-3 glass-card p-6 rounded-[2.5rem] bg-gradient-to-r from-emerald-950/20 via-slate-900/10 to-teal-950/20 border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className={`md:col-span-3 glass-card p-6 rounded-[2.5rem] border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+          todayFitnessInfo.isWorkoutDay && !todayFitnessInfo.isDone
+            ? 'bg-gradient-to-r from-emerald-950/25 via-slate-900/20 to-teal-950/25 border-emerald-500/25'
+            : todayFitnessInfo.isWorkoutDay && todayFitnessInfo.isDone
+            ? 'bg-gradient-to-r from-teal-950/20 via-slate-900/15 to-emerald-950/20 border-teal-500/20'
+            : 'bg-gradient-to-r from-indigo-950/20 via-slate-900/15 to-slate-900/20 border-indigo-500/20'
+        }`}>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 shrink-0">
-              <Dumbbell size={24} />
+            <div className={`w-12 h-12 rounded-2xl text-white flex items-center justify-center shadow-lg shrink-0 ${
+              todayFitnessInfo.isWorkoutDay && !todayFitnessInfo.isDone
+                ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-600/30'
+                : todayFitnessInfo.isWorkoutDay && todayFitnessInfo.isDone
+                ? 'bg-gradient-to-br from-teal-600 to-emerald-700 shadow-teal-600/30'
+                : 'bg-gradient-to-br from-indigo-600 to-slate-700 shadow-indigo-600/20'
+            }`}>
+              {todayFitnessInfo.isWorkoutDay ? <Dumbbell size={24} /> : <Coffee size={24} />}
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                  {language === 'en' ? 'Fitness & Workout' : 'Palestra & Scheda Attiva'}
+                <span className={`text-xs font-black uppercase tracking-wider ${
+                  todayFitnessInfo.isWorkoutDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-400'
+                }`}>
+                  {todayFitnessInfo.isWorkoutDay 
+                    ? (todayFitnessInfo.isDone ? `✓ COMPLETATO • ${todayFitnessInfo.dayName}` : `COACH OGGI • ${todayFitnessInfo.dayName.toUpperCase()}`)
+                    : `COACH OGGI • ${todayFitnessInfo.dayName.toUpperCase()}`}
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
-                  {language === 'en' ? 'Full Body' : 'Principianti'}
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                  todayFitnessInfo.isWorkoutDay 
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                    : 'bg-indigo-500/10 text-indigo-400'
+                }`}>
+                  {todayFitnessInfo.isWorkoutDay ? (todayFitnessInfo.assignedDayTag || 'Giorno A') : 'Giorno di Riposo'}
                 </span>
               </div>
               <h4 className="text-base font-black text-slate-900 dark:text-white">
-                {language === 'en' ? 'Full Body 3x - Day A (Press, Squat, Lat)' : 'Full Body 3x - Scheda A (Panca, Leg Press, Lat)'}
+                {todayFitnessInfo.isWorkoutDay 
+                  ? (todayFitnessInfo.isDone 
+                      ? (language === 'en' ? 'Session completed for today! Great job.' : 'Sessione completata per oggi! Ottimo lavoro.') 
+                      : (todayFitnessInfo.assignedRoutineTitle || 'Full Body 3x - Scheda A'))
+                  : (language === 'en' 
+                      ? `Rest & Muscle Recovery Day • Next: ${todayFitnessInfo.nextDayName}` 
+                      : `Giorno di Riposo e Recupero Muscolare • Prossima: ${todayFitnessInfo.nextDayName}`)}
               </h4>
               <p className="text-xs text-slate-400 font-medium">
-                {language === 'en' 
-                  ? 'Visual guides with 3D illuminated active muscles and automatic rest countdown.' 
-                  : 'Guide visive muscolari illuminate, timer di recupero automatico e serie progressive.'}
+                {todayFitnessInfo.isWorkoutDay 
+                  ? (todayFitnessInfo.isDone
+                      ? (language === 'en' ? 'Recovery mode: stay hydrated and rest your muscles.' : 'Fase di recupero attiva: bevi acqua e riposa bene per ricostruire le fibre.')
+                      : (language === 'en' ? 'Ready to train? Check exercise technique and rest timers.' : 'Pronto ad allenarti? Consulta la tecnica 3D ed i timer di recupero per ogni serie.'))
+                  : (language === 'en' 
+                      ? 'Muscles grow while resting. Rest up and stay hydrated.' 
+                      : 'I muscoli crescono a riposo. Recupera le energie per dare il massimo nella prossima sessione.')}
               </p>
             </div>
           </div>
 
           <button
             onClick={() => onSetView('fitness')}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-600/25 shrink-0 transition-all active:scale-95 group"
+            className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-white font-black text-xs shadow-lg shrink-0 transition-all active:scale-95 group ${
+              todayFitnessInfo.isWorkoutDay && !todayFitnessInfo.isDone
+                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/25'
+                : 'bg-slate-800 hover:bg-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-200'
+            }`}
           >
-            <span>{language === 'en' ? 'Open Fitness Suite' : 'Apri Scheda & Allenati'}</span>
+            <span>
+              {todayFitnessInfo.isWorkoutDay && !todayFitnessInfo.isDone
+                ? (language === 'en' ? 'Start Today\'s Workout' : 'Inizia Scheda di Oggi')
+                : (language === 'en' ? 'View Weekly Plan' : 'Vedi Programma Settimanale')}
+            </span>
             <ArrowUpRight size={15} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </button>
         </div>

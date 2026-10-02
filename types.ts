@@ -141,3 +141,14 @@ export interface CompletedWorkoutLog {
   notes?: string;
 }
 
+export interface WeeklyScheduleDay {
+  dayIndex: number; // 0 = Domenica, 1 = Lunedì, 2 = Martedì, ..., 6 = Sabato
+  dayName: string;
+  shortName: string;
+  isWorkoutDay: boolean;
+  assignedRoutineId?: string;
+  assignedRoutineTitle?: string;
+  assignedDayTag?: string;
+}
+
+

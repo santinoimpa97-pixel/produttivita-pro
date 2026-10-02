@@ -1,4 +1,4 @@
-import { ExerciseGuide, WorkoutRoutine } from '../types';
+import { ExerciseGuide, WorkoutRoutine, WeeklyScheduleDay } from '../types';
 
 export const EXERCISE_GUIDES: ExerciseGuide[] = [
   // --- PETTO (CHEST) ---
@@ -568,3 +568,62 @@ export const STARTER_ROUTINES: WorkoutRoutine[] = [
     ]
   }
 ];
+
+export const DEFAULT_WEEKLY_SCHEDULE: WeeklyScheduleDay[] = [
+  { 
+    dayIndex: 1, 
+    dayName: 'Lunedì', 
+    shortName: 'Lun', 
+    isWorkoutDay: true, 
+    assignedRoutineId: 'starter-fullbody-a', 
+    assignedRoutineTitle: 'Full Body 3x - Scheda A (Fondamentali)', 
+    assignedDayTag: 'Giorno A' 
+  },
+  { 
+    dayIndex: 2, 
+    dayName: 'Martedì', 
+    shortName: 'Mar', 
+    isWorkoutDay: false, 
+    assignedDayTag: 'Riposo' 
+  },
+  { 
+    dayIndex: 3, 
+    dayName: 'Mercoledì', 
+    shortName: 'Mer', 
+    isWorkoutDay: true, 
+    assignedRoutineId: 'starter-fullbody-b', 
+    assignedRoutineTitle: 'Full Body 3x - Scheda B (Variante)', 
+    assignedDayTag: 'Giorno B' 
+  },
+  { 
+    dayIndex: 4, 
+    dayName: 'Giovedì', 
+    shortName: 'Gio', 
+    isWorkoutDay: false, 
+    assignedDayTag: 'Riposo' 
+  },
+  { 
+    dayIndex: 5, 
+    dayName: 'Venerdì', 
+    shortName: 'Ven', 
+    isWorkoutDay: true, 
+    assignedRoutineId: 'starter-fullbody-a', 
+    assignedRoutineTitle: 'Full Body 3x - Scheda A (Fondamentali)', 
+    assignedDayTag: 'Giorno A' 
+  },
+  { 
+    dayIndex: 6, 
+    dayName: 'Sabato', 
+    shortName: 'Sab', 
+    isWorkoutDay: false, 
+    assignedDayTag: 'Riposo' 
+  },
+  { 
+    dayIndex: 0, 
+    dayName: 'Domenica', 
+    shortName: 'Dom', 
+    isWorkoutDay: false, 
+    assignedDayTag: 'Riposo' 
+  },
+];
+
