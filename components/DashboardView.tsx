@@ -20,7 +20,8 @@ import {
   Brain,
   Zap,
   Check,
-  RotateCw
+  RotateCw,
+  Dumbbell
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Task, Routine, Appointment, Goal } from '../types';
@@ -672,6 +673,41 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               />
             </div>
           </div>
+        </div>
+
+        {/* Card 5: Fitness & Gym Routine Bento */}
+        <div className="md:col-span-3 glass-card p-6 rounded-[2.5rem] bg-gradient-to-r from-emerald-950/20 via-slate-900/10 to-teal-950/20 border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 shrink-0">
+              <Dumbbell size={24} />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  {language === 'en' ? 'Fitness & Workout' : 'Palestra & Scheda Attiva'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                  {language === 'en' ? 'Full Body' : 'Principianti'}
+                </span>
+              </div>
+              <h4 className="text-base font-black text-slate-900 dark:text-white">
+                {language === 'en' ? 'Full Body 3x - Day A (Press, Squat, Lat)' : 'Full Body 3x - Scheda A (Panca, Leg Press, Lat)'}
+              </h4>
+              <p className="text-xs text-slate-400 font-medium">
+                {language === 'en' 
+                  ? 'Visual guides with 3D illuminated active muscles and automatic rest countdown.' 
+                  : 'Guide visive muscolari illuminate, timer di recupero automatico e serie progressive.'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onSetView('fitness')}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-600/25 shrink-0 transition-all active:scale-95 group"
+          >
+            <span>{language === 'en' ? 'Open Fitness Suite' : 'Apri Scheda & Allenati'}</span>
+            <ArrowUpRight size={15} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </button>
         </div>
 
       </div>

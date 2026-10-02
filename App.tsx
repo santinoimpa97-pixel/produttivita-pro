@@ -15,12 +15,16 @@ import {
   Note,
   AssistantProfile,
   ChatMessage,
+  WorkoutRoutine,
+  CompletedWorkoutLog,
 } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import AuthView from './components/AuthView';
 import DashboardView from './components/DashboardView';
 import TasksView from './components/TasksView';
+import FitnessView from './components/FitnessView';
+import ActiveWorkoutSession from './components/ActiveWorkoutSession';
 import RoutinesView from './components/RoutinesView';
 import GoalsView from './components/GoalsView';
 import CalendarView from './components/CalendarView';
@@ -110,6 +114,49 @@ function App() {
   // AI Loading States
   const [generatingTaskId, setGeneratingTaskId] = useState<string | null>(null);
   const [generatingRoutineId, setGeneratingRoutineId] = useState<string | null>(null);
+
+  // Fitness / Gym Workout States
+  const [activeWorkoutRoutine, setActiveWorkoutRoutine] = useState<WorkoutRoutine | null>(null);
+  const [fitnessLogs, setFitnessLogs] = useState<CompletedWorkoutLog[]>(() => {
+    try {
+      const saved = localStorage.getItem('produttivita_gym_logs_v1');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to load gym logs', e);
+    }
+    return [];
+  });
+
+  const handleStartWorkout = (routine: WorkoutRoutine) => {
+    setActiveWorkoutRoutine(routine);
+  };
+
+  const handleFinishWorkout = (log: CompletedWorkoutLog) => {
+    setFitnessLogs(prev => {
+      const updated = [log, ...prev];
+      try {
+        localStorage.setItem('produttivita_gym_logs_v1', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save gym logs', e);
+      }
+      return updated;
+    });
+    setActiveWorkoutRoutine(null);
+    playTaskCompleteSound();
+    triggerCelebrationConfetti();
+  };
+
+  const handleDeleteFitnessLog = (id: string) => {
+    setFitnessLogs(prev => {
+      const updated = prev.filter(l => l.id !== id);
+      try {
+        localStorage.setItem('produttivita_gym_logs_v1', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save gym logs', e);
+      }
+      return updated;
+    });
+  };
 
   // Motivational Quote
   const [isRefreshingQuote, setIsRefreshingQuote] = useState(false);
@@ -839,6 +886,12 @@ function App() {
           onGenerateSubtasks={handleGenerateSubtasks}
           generatingTaskId={generatingTaskId}
         />;
+      case 'fitness':
+        return <FitnessView
+          onStartWorkout={handleStartWorkout}
+          workoutLogs={fitnessLogs}
+          onDeleteLog={handleDeleteFitnessLog}
+        />;
       case 'routines':
         return <RoutinesView
           routines={routines}
@@ -919,7 +972,8 @@ function App() {
     chatHistory, 
     assistantGenerating,
     subtitle,
-    isRefreshingQuote
+    isRefreshingQuote,
+    fitnessLogs
   ]);
 
   const renderMainContent = () => {
@@ -979,6 +1033,15 @@ function App() {
           onLogout={handleLogout}
           onOpenCommandMenu={() => setIsCommandMenuOpen(true)}
         />
+
+        {/* Live Active Workout Fullscreen / Modal Session */}
+        {activeWorkoutRoutine && (
+          <ActiveWorkoutSession
+            routine={activeWorkoutRoutine}
+            onFinishWorkout={handleFinishWorkout}
+            onCancelWorkout={() => setActiveWorkoutRoutine(null)}
+          />
+        )}
 
         {/* Command Palette Modal */}
         <CommandMenu 

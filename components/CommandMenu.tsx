@@ -16,7 +16,8 @@ import {
   Repeat, 
   Bot, 
   User,
-  Plus
+  Plus,
+  Dumbbell
 } from 'lucide-react';
 import { Task, Note, Goal, Appointment } from '../types';
 import { View } from './BottomNav';
@@ -111,6 +112,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
     const navs: { id: View; label: string; icon: React.ReactNode }[] = [
       { id: 'dashboard', label: t('nav_dashboard') || 'Dashboard', icon: <LayoutDashboard className="w-4 h-4 text-blue-500" /> },
       { id: 'tasks', label: t('nav_tasks') || 'Attività', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" /> },
+      { id: 'fitness', label: t('nav_fitness') || 'Palestra & Fitness', icon: <Dumbbell className="w-4 h-4 text-emerald-500" /> },
       { id: 'routines', label: t('nav_routines') || 'Routine', icon: <Repeat className="w-4 h-4 text-amber-500" /> },
       { id: 'calendar', label: t('nav_calendar') || 'Calendario', icon: <Calendar className="w-4 h-4 text-purple-500" /> },
       { id: 'goals', label: t('nav_goals') || 'Obiettivi', icon: <Target className="w-4 h-4 text-rose-500" /> },

@@ -2,6 +2,7 @@ import React from 'react';
 import { 
   LayoutDashboard,
   CheckSquare, 
+  Dumbbell,
   Repeat, 
   Target, 
   Calendar, 
@@ -10,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
-export type View = 'dashboard' | 'tasks' | 'routines' | 'goals' | 'calendar' | 'notes' | 'profile' | 'assistant';
+export type View = 'dashboard' | 'tasks' | 'fitness' | 'routines' | 'goals' | 'calendar' | 'notes' | 'profile' | 'assistant';
 
 interface BottomNavProps {
   currentView: View;
@@ -25,18 +26,18 @@ const NavItem: React.FC<{
 }> = ({ icon, label, isActive, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center flex-1 py-1.5 transition-all duration-200 relative ${
+    className={`flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 relative ${
       isActive ? 'text-brand-600 dark:text-brand-400 font-black' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-bold'
     }`}
   >
-    <div className={`p-1.5 rounded-xl transition-all duration-200 ${isActive ? 'bg-brand-500/15 scale-110' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-      {React.cloneElement(icon as React.ReactElement, { size: 18, strokeWidth: isActive ? 2.5 : 2 })}
+    <div className={`p-1 rounded-xl transition-all duration-200 ${isActive ? 'bg-brand-500/15 scale-110' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+      {React.cloneElement(icon as React.ReactElement, { size: 17, strokeWidth: isActive ? 2.5 : 2 })}
     </div>
-    <span className="text-[9px] mt-0.5 tracking-tight truncate max-w-[50px]">
+    <span className="text-[8.5px] mt-0.5 tracking-tight truncate max-w-[42px]">
       {label}
     </span>
     {isActive && (
-      <div className="absolute -bottom-1 w-1 h-1 bg-brand-600 dark:bg-brand-400 rounded-full" />
+      <div className="absolute -bottom-0.5 w-1 h-1 bg-brand-600 dark:bg-brand-400 rounded-full" />
     )}
   </button>
 );
@@ -46,8 +47,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onSetView }) => {
   const navItems: { view: View; label: string; icon: React.ReactNode }[] = [
     { view: 'dashboard', label: t('nav_dashboard'), icon: <LayoutDashboard /> },
     { view: 'tasks', label: t('nav_tasks'), icon: <CheckSquare /> },
+    { view: 'fitness', label: t('nav_fitness'), icon: <Dumbbell /> },
     { view: 'routines', label: t('nav_routines'), icon: <Repeat /> },
-    { view: 'goals', label: t('nav_goals'), icon: <Target /> },
     { view: 'calendar', label: t('nav_calendar'), icon: <Calendar /> },
     { view: 'notes', label: t('nav_notes'), icon: <StickyNote /> },
     { view: 'assistant', label: t('nav_assistant'), icon: <Sparkles /> },

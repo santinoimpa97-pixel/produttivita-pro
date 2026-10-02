@@ -79,3 +79,65 @@ export interface ChatMessage {
     role: 'user' | 'model';
     content: string;
 }
+
+// --- FITNESS & WORKOUT TYPES ---
+
+export type MuscleGroup = 'chest' | 'back' | 'legs' | 'shoulders' | 'arms' | 'core';
+
+export interface ExerciseGuide {
+  id: string;
+  name: string;
+  nameEn: string;
+  muscleGroup: MuscleGroup;
+  primaryMuscles: string[];
+  secondaryMuscles?: string[];
+  equipment: 'barbell' | 'dumbbell' | 'machine' | 'cables' | 'bodyweight';
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  viewType: 'front' | 'back';
+  setup: string;
+  setupEn: string;
+  execution: string;
+  executionEn: string;
+  commonMistakes: string[];
+  commonMistakesEn: string[];
+  tip?: string;
+}
+
+export interface WorkoutSet {
+  id: string;
+  setNumber: number;
+  reps: number;
+  weightKg: number;
+  completed: boolean;
+}
+
+export interface WorkoutExercise {
+  id: string;
+  exerciseId: string;
+  name: string;
+  muscleGroup: MuscleGroup;
+  sets: WorkoutSet[];
+  notes?: string;
+  targetRestSeconds?: number;
+}
+
+export interface WorkoutRoutine {
+  id: string;
+  title: string;
+  description: string;
+  dayTag: string; // e.g., 'Giorno A', 'Push', 'Full Body 1'
+  exercises: WorkoutExercise[];
+  estimatedDurationMin: number;
+}
+
+export interface CompletedWorkoutLog {
+  id: string;
+  routineTitle: string;
+  date: string; // ISO string
+  durationMinutes: number;
+  totalVolumeKg: number;
+  exercisesCompleted: number;
+  totalSets: number;
+  notes?: string;
+}
+

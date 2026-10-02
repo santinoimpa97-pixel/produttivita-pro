@@ -5,6 +5,7 @@ const translations = {
     // Nav
     nav_dashboard: 'Panoramica',
     nav_tasks: 'Attività',
+    nav_fitness: 'Palestra',
     nav_routines: 'Routine',
     nav_goals: 'Obiettivi',
     nav_calendar: 'Calendario',
@@ -203,6 +204,7 @@ const translations = {
     // Nav
     nav_dashboard: 'Dashboard',
     nav_tasks: 'Tasks',
+    nav_fitness: 'Fitness',
     nav_routines: 'Routines',
     nav_goals: 'Goals',
     nav_calendar: 'Calendar',

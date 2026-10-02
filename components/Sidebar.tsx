@@ -2,6 +2,7 @@ import React from 'react';
 import { 
   LayoutDashboard, 
   CheckSquare, 
+  Dumbbell,
   Repeat, 
   Target, 
   Calendar, 
@@ -44,6 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { view: 'dashboard' as View, label: t('nav_dashboard'), icon: LayoutDashboard },
     { view: 'tasks' as View, label: t('nav_tasks'), icon: CheckSquare, badge: tasksCountToday > 0 ? tasksCountToday : undefined },
+    { view: 'fitness' as View, label: t('nav_fitness') || 'Palestra', icon: Dumbbell },
     { view: 'routines' as View, label: t('nav_routines'), icon: Repeat },
     { view: 'goals' as View, label: t('nav_goals'), icon: Target },
     { view: 'calendar' as View, label: t('nav_calendar'), icon: Calendar },
