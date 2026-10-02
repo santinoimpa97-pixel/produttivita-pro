@@ -31,6 +31,7 @@ import {
 import { EXERCISE_GUIDES, STARTER_ROUTINES } from '../data/exercisesData';
 import ExerciseDetailModal from './ExerciseDetailModal';
 import { useLanguage } from '../LanguageContext';
+import { generateWorkoutRoutinesWithGemini } from '../services/geminiService';
 
 interface FitnessViewProps {
   onStartWorkout: (routine: WorkoutRoutine) => void;
@@ -85,6 +86,15 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
   const [newRoutineTag, setNewRoutineTag] = useState('');
   const [newRoutineDesc, setNewRoutineDesc] = useState('');
   const [newRoutineSelectedExIds, setNewRoutineSelectedExIds] = useState<string[]>([]);
+
+  // AI Workout Generator State
+  const [isGeneratingWithAi, setIsGeneratingWithAi] = useState(false);
+  const [aiDaysPerWeek, setAiDaysPerWeek] = useState(3);
+  const [aiGoal, setAiGoal] = useState<'massa' | 'definizione' | 'dimagrimento' | 'forza'>('massa');
+  const [aiExperience, setAiExperience] = useState<'beginner' | 'intermediate'>('beginner');
+  const [aiCustomNotes, setAiCustomNotes] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   // Filtered exercises for the library tab
   const filteredExercises = useMemo(() => {
@@ -329,8 +339,15 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
         {activeTab === 'routines' && (
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setIsGeneratingWithAi(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-emerald-600/20 transition-all active:scale-95"
+            >
+              <Sparkles size={14} className="text-yellow-300" />
+              <span>{language === 'en' ? 'AI Routine Generator' : 'Genera con Coach IA'}</span>
+            </button>
+            <button
               onClick={() => setIsCreatingRoutine(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors"
             >
               <Plus size={14} />
               <span className="hidden sm:inline">{language === 'en' ? 'New Routine' : 'Nuova Scheda'}</span>
@@ -338,7 +355,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
             <button
               onClick={handleResetToDefaultRoutines}
               className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title={language === 'en' ? 'Reset starter routines' : 'Ripristina schede iniziali'}
+              title={language === 'en' ? 'Reset starter routines' : 'Ripristina schede predefinite'}
             >
               <Layers size={15} />
             </button>
@@ -797,6 +814,193 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                     className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20"
                   >
                     {language === 'en' ? 'Save Routine' : 'Salva Scheda'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: AI Workout Generator */}
+      <AnimatePresence>
+        {isGeneratingWithAi && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-500 to-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-500/20">
+                    <Sparkles size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-slate-900 dark:text-white text-base">
+                      {language === 'en' ? 'AI Coach: Personalized Workout' : 'Coach IA: Crea la Tua Scheda'}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-medium">
+                      {language === 'en' ? 'Gemini designs a balanced program for your goals' : 'Gemini crea una scheda su misura per le tue esigenze'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsGeneratingWithAi(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {aiError && (
+                <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-red-600 dark:text-red-400 font-semibold">
+                  {aiError}
+                </div>
+              )}
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsAiLoading(true);
+                  setAiError(null);
+                  try {
+                    const generated = await generateWorkoutRoutinesWithGemini({
+                      daysPerWeek: aiDaysPerWeek,
+                      goal: aiGoal === 'massa' ? 'Ipertrofia e aumento massa muscolare' :
+                            aiGoal === 'definizione' ? 'Tonificazione e definizione muscolare' :
+                            aiGoal === 'dimagrimento' ? 'Dimagrimento e brucia calorie' : 'Forza base e postura per chi ha iniziato da poco',
+                      experienceLevel: aiExperience,
+                      notes: aiCustomNotes.trim()
+                    }, language);
+
+                    if (generated && generated.length > 0) {
+                      setRoutines(prev => [...generated, ...prev]);
+                      setExpandedRoutineId(generated[0].id);
+                      setIsGeneratingWithAi(false);
+                    }
+                  } catch (err: any) {
+                    console.error('Failed to generate routine with Gemini', err);
+                    setAiError(language === 'en' ? 'Generation failed. Check your connection or API key.' : 'Generazione fallita. Verifica la connessione o la chiave API.');
+                  } finally {
+                    setIsAiLoading(false);
+                  }
+                }}
+                className="space-y-4"
+              >
+                {/* Frequency */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    {language === 'en' ? 'Days Per Week' : 'Quante volte a settimana vuoi andare in palestra?'}
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[2, 3, 4].map(days => (
+                      <button
+                        type="button"
+                        key={`days-${days}`}
+                        onClick={() => setAiDaysPerWeek(days)}
+                        className={`py-2 rounded-xl text-xs font-black transition-all ${
+                          aiDaysPerWeek === days
+                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {days} {language === 'en' ? 'Days' : 'Giorni'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Goal */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    {language === 'en' ? 'Primary Goal' : 'Qual è il tuo obiettivo principale?'}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'massa', label: language === 'en' ? 'Muscle Gain / Mass' : 'Massa & Ipertrofia' },
+                      { id: 'definizione', label: language === 'en' ? 'Toning & Shape' : 'Tonificazione & Definizione' },
+                      { id: 'dimagrimento', label: language === 'en' ? 'Fat Loss / Cardio' : 'Dimagrimento & Brucia Calorie' },
+                      { id: 'forza', label: language === 'en' ? 'Posture & Strength' : 'Postura & Forza Base' },
+                    ].map(g => (
+                      <button
+                        type="button"
+                        key={`goal-${g.id}`}
+                        onClick={() => setAiGoal(g.id as any)}
+                        className={`p-2.5 rounded-xl text-xs font-bold text-left transition-all ${
+                          aiGoal === g.id
+                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Experience level */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    {language === 'en' ? 'Experience Level' : 'Il tuo livello di esperienza'}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAiExperience('beginner')}
+                      className={`p-2 rounded-xl text-xs font-black transition-all ${
+                        aiExperience === 'beginner'
+                          ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      {language === 'en' ? 'Beginner (Just started)' : 'Principiante (Appena iniziato)'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAiExperience('intermediate')}
+                      className={`p-2 rounded-xl text-xs font-black transition-all ${
+                        aiExperience === 'intermediate'
+                          ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      {language === 'en' ? 'Intermediate' : 'Intermedio'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'en' ? 'Specific preferences or notes (optional)' : 'Note o preferenze speciali (facoltativo)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={aiCustomNotes}
+                    onChange={e => setAiCustomNotes(e.target.value)}
+                    placeholder={language === 'en' ? 'e.g. Focus on chest & arms, only machines' : 'es. Focus braccia e petto, preferisco macchinari guidati'}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    disabled={isAiLoading}
+                    onClick={() => setIsGeneratingWithAi(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  >
+                    {language === 'en' ? 'Cancel' : 'Annulla'}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isAiLoading}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-black text-xs shadow-lg shadow-emerald-600/25 active:scale-95 disabled:opacity-50 transition-all"
+                  >
+                    <Sparkles size={14} className={isAiLoading ? 'animate-spin' : ''} />
+                    <span>{isAiLoading ? (language === 'en' ? 'Generating Plan...' : 'Creazione Scheda in corso...') : (language === 'en' ? 'Generate My Routine' : 'Genera la Mia Scheda')}</span>
                   </button>
                 </div>
               </form>

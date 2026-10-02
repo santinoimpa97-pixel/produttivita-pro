@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Language } from "../i18n";
-import { Task, Routine, Appointment, Priority } from "../types";
+import { Task, Routine, Appointment, Priority, WorkoutRoutine, WorkoutExercise, MuscleGroup } from "../types";
 
 // --- CONFIGURAZIONE API ---
 const defaultApiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -526,3 +526,138 @@ export const transcribeAudioWithGemini = async (audioBlob: Blob, language: strin
 
   return (response.text || '').trim();
 };
+
+export interface AiWorkoutParams {
+  daysPerWeek: number; // 2, 3, 4
+  goal: string;
+  experienceLevel: 'beginner' | 'intermediate';
+  notes?: string;
+}
+
+export const generateWorkoutRoutinesWithGemini = async (
+  params: AiWorkoutParams,
+  language: Language = 'it'
+): Promise<WorkoutRoutine[]> => {
+  const ai = getAi();
+  
+  const prompt = language === 'en'
+    ? `You are an elite personal trainer. Generate a personalized gym routine plan for a ${params.experienceLevel} trainee.
+Days per week: ${params.daysPerWeek}.
+Goal: ${params.goal}.
+Additional notes: ${params.notes || 'None'}.
+
+Available exercise IDs to choose from:
+- chest: bench-press (Barbell Bench Press), incline-db-press (Incline DB Press), chest-press-machine (Chest Press Machine)
+- back: lat-pulldown (Lat Pulldown), seated-cable-row (Seated Cable Row), dumbbell-row (Dumbbell Row)
+- legs: leg-press (45° Leg Press), goblet-squat (Goblet Squat), leg-extension (Leg Extension), leg-curl (Leg Curl)
+- shoulders: shoulder-press-db (DB Shoulder Press), lateral-raises (Lateral Raises)
+- arms: dumbbell-curl (DB Bicep Curl), tricep-pushdown (Cable Tricep Pushdown)
+- core: plank (Plank), cable-crunch (Floor Crunch)
+
+Return a JSON object with this exact structure:
+{
+  "routines": [
+    {
+      "title": "Routine Title",
+      "dayTag": "Day A",
+      "description": "Short explanation of focus",
+      "estimatedDurationMin": 45,
+      "exercises": [
+        {
+          "exerciseId": "leg-press",
+          "name": "Leg Press a 45°",
+          "muscleGroup": "legs",
+          "targetRestSeconds": 90,
+          "notes": "3x10-12 with controlled form",
+          "sets": [
+            { "setNumber": 1, "reps": 12, "weightKg": 40 },
+            { "setNumber": 2, "reps": 10, "weightKg": 50 },
+            { "setNumber": 3, "reps": 10, "weightKg": 50 }
+          ]
+        }
+      ]
+    }
+  ]
+}
+Generate ${params.daysPerWeek >= 3 ? (params.daysPerWeek === 4 ? 2 : 2) : 1} routines (e.g. Day A, Day B). Include 5-6 exercises per routine.`
+    : `Sei un personal trainer certificato di alto livello. Crea un piano di allenamento personalizzato per una persona che è al livello: ${params.experienceLevel === 'beginner' ? 'Principiante in palestra (ha iniziato da poco)' : 'Intermedio'}.
+Frequenza settimanale: ${params.daysPerWeek} giorni a settimana.
+Obiettivo: ${params.goal}.
+Note/Preferenze: ${params.notes || 'Nessuna'}.
+
+Esercizi disponibili nel database dell'app tra cui scegliere:
+- petto: bench-press (Panca Piana con Bilanciere), incline-db-press (Spinte Manubri Panca Inclinata), chest-press-machine (Chest Press Machine)
+- dorso: lat-pulldown (Lat Machine), seated-cable-row (Pulley Basso), dumbbell-row (Rematore Manubrio)
+- gambe: leg-press (Leg Press a 45°), goblet-squat (Goblet Squat Manubrio), leg-extension (Leg Extension), leg-curl (Leg Curl)
+- spalle: shoulder-press-db (Lento Avanti Manubri), lateral-raises (Alzate Laterali)
+- braccia: dumbbell-curl (Curl Bicipiti Manubri), tricep-pushdown (Pushdown Tricipiti Corda)
+- addome: plank (Plank Isometrico), cable-crunch (Crunch Tappetino)
+
+Rispondi ESCLUSIVAMENTE con un JSON valido con questa struttura esatta:
+{
+  "routines": [
+    {
+      "title": "Nome Scheda",
+      "dayTag": "Giorno A",
+      "description": "Breve descrizione del focus muscolare",
+      "estimatedDurationMin": 45,
+      "exercises": [
+        {
+          "exerciseId": "leg-press",
+          "name": "Leg Press a 45°",
+          "muscleGroup": "legs",
+          "targetRestSeconds": 90,
+          "notes": "3 serie da 10-12 con peso controllato",
+          "sets": [
+            { "setNumber": 1, "reps": 12, "weightKg": 40 },
+            { "setNumber": 2, "reps": 10, "weightKg": 50 },
+            { "setNumber": 3, "reps": 10, "weightKg": 50 }
+          ]
+        }
+      ]
+    }
+  ]
+}
+Genera ${params.daysPerWeek >= 2 ? 2 : 1} schede (es. Giorno A e Giorno B) bilanciate, con 5-6 esercizi ciascuna, serie da 3 o 4, ripetizioni e carichi di partenza ragionevoli per chi inizia.`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      maxOutputTokens: 1500,
+      thinkingConfig: { thinkingBudget: 0 }
+    }
+  });
+
+  const parsed = JSON.parse(response.text || '{}');
+  const rawRoutines = parsed.routines || [];
+
+  return rawRoutines.map((r: any, rIdx: number) => ({
+    id: `ai-routine-${Date.now()}-${rIdx}`,
+    title: r.title || `Scheda ${r.dayTag || rIdx + 1}`,
+    dayTag: r.dayTag || `Giorno ${String.fromCharCode(65 + rIdx)}`,
+    description: r.description || 'Scheda personalizzata generata dal Coach IA',
+    estimatedDurationMin: r.estimatedDurationMin || 45,
+    exercises: (r.exercises || []).map((ex: any, exIdx: number) => ({
+      id: `ai-ex-${Date.now()}-${rIdx}-${exIdx}`,
+      exerciseId: ex.exerciseId || 'chest-press-machine',
+      name: ex.name || 'Esercizio',
+      muscleGroup: (ex.muscleGroup || 'chest') as MuscleGroup,
+      targetRestSeconds: ex.targetRestSeconds || 90,
+      notes: ex.notes || 'Controlla il movimento',
+      sets: (ex.sets || [
+        { setNumber: 1, reps: 10, weightKg: 20 },
+        { setNumber: 2, reps: 10, weightKg: 20 },
+        { setNumber: 3, reps: 10, weightKg: 20 }
+      ]).map((s: any, sIdx: number) => ({
+        id: `s-${Date.now()}-${rIdx}-${exIdx}-${sIdx}`,
+        setNumber: s.setNumber || sIdx + 1,
+        reps: s.reps || 10,
+        weightKg: s.weightKg || 15,
+        completed: false
+      }))
+    }))
+  }));
+};
+
