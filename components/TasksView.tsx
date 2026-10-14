@@ -78,7 +78,7 @@ const TasksView: React.FC<TasksViewProps> = (props) => {
     <div className="space-y-8">
       {/* Input New Task */}
       <section>
-        <TaskInput onAddTask={onAddTask} />
+        <TaskInput onAddTask={onAddTask} existingTasks={tasks} />
       </section>
 
       {/* Search & Priority Filter Bar */}

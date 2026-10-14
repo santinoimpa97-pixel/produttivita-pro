@@ -151,4 +151,13 @@ export interface WeeklyScheduleDay {
   assignedDayTag?: string;
 }
 
+export interface TaskHistoryItem {
+  id?: string;
+  text: string;
+  priority: Priority;
+  count: number;
+  lastUsed: string; // ISO date
+}
+
+
 

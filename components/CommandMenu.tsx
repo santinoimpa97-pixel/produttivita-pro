@@ -17,11 +17,13 @@ import {
   Bot, 
   User,
   Plus,
-  Dumbbell
+  Dumbbell,
+  History
 } from 'lucide-react';
-import { Task, Note, Goal, Appointment } from '../types';
+import { Task, Note, Goal, Appointment, Priority } from '../types';
 import { View } from './BottomNav';
 import { useLanguage } from '../LanguageContext';
+import { getTaskHistory, recordTaskInHistory } from '../services/taskHistoryService';
 
 interface CommandMenuProps {
   isOpen: boolean;
@@ -88,8 +90,30 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
         icon: <Plus className="w-4 h-4 text-emerald-500" />,
         onSelect: () => {
           onAddTask(query.trim());
+          recordTaskInHistory(query.trim(), Priority.Medium);
           onClose();
         },
+      });
+
+      // Also suggest from past task history
+      const history = getTaskHistory(tasks);
+      const matched = history
+        .filter(h => h.text.toLowerCase().includes(q) && h.text.toLowerCase() !== q)
+        .slice(0, 3);
+
+      matched.forEach((m, idx) => {
+        result.push({
+          id: `history-task-${idx}`,
+          title: m.text,
+          subtitle: `${language === 'en' ? 'Past activity' : 'Dalla cronologia'} • ${m.priority}`,
+          category: 'action',
+          icon: <History className="w-4 h-4 text-brand-500" />,
+          onSelect: () => {
+            onAddTask(m.text);
+            recordTaskInHistory(m.text, m.priority);
+            onClose();
+          }
+        });
       });
     }
 
