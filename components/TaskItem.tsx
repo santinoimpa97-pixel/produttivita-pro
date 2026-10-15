@@ -5,6 +5,8 @@ import {
   Edit2, 
   Sparkles, 
   ChevronDown, 
+  ChevronUp,
+  GripVertical,
   Plus,
   Calendar,
   CheckCircle2, 
@@ -25,6 +27,11 @@ interface TaskItemProps {
   onUpdateSubTask: (taskId: string, subTaskId: string, newText: string) => void;
   onGenerateSubtasks: (taskId: string, taskText: string) => void;
   isGenerating: boolean;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onReorder?: (sourceId: string, targetId: string) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 const priorityConfig: Record<Priority, { bg: string, text: string, border: string }> = {
@@ -55,7 +62,12 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onDeleteSubTask,
   onUpdateSubTask,
   onGenerateSubtasks,
-  isGenerating
+  isGenerating,
+  onMoveUp,
+  onMoveDown,
+  onReorder,
+  isFirst = false,
+  isLast = false,
 }) => {
   const { t, language } = useLanguage();
   const locale = language === 'en' ? 'en-US' : 'it-IT';
@@ -63,6 +75,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const [editText, setEditText] = useState(task.text);
   const [newSubTaskText, setNewSubTaskText] = useState('');
   const [isSubtasksVisible, setIsSubtasksVisible] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -121,17 +134,70 @@ const TaskItem: React.FC<TaskItemProps> = ({
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', task.id);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (!isDragOver) setIsDragOver(true);
+      }}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const sourceId = e.dataTransfer.getData('text/plain');
+        if (sourceId && sourceId !== task.id && onReorder) {
+          onReorder(sourceId, task.id);
+        }
+      }}
       className={`glass-card rounded-2xl overflow-hidden group transition-all duration-200 ${
+        isDragOver ? 'ring-2 ring-brand-500 bg-brand-50/20 dark:bg-brand-950/20 scale-[1.01]' : ''
+      } ${
         task.completed 
           ? 'opacity-65 bg-slate-100/50 dark:bg-slate-900/30' 
           : 'hover:border-brand-500/40 hover:shadow-lg hover:shadow-brand-500/5'
       }`}
     >
       <div className="p-4 sm:p-5">
-        <div className="flex items-start gap-3.5">
+        <div className="flex items-start gap-2 sm:gap-3">
+          {/* Drag Handle & Move Up/Down Buttons */}
+          <div className="flex flex-col items-center justify-center -ml-1 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 shrink-0 select-none pt-0.5">
+            {onMoveUp && (
+              <button
+                type="button"
+                disabled={isFirst}
+                onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
+                className="p-0.5 hover:text-brand-600 dark:hover:text-brand-400 disabled:opacity-15 disabled:hover:text-slate-300 transition-colors"
+                title={language === 'en' ? 'Move up' : 'Sposta in alto'}
+              >
+                <ChevronUp size={13} strokeWidth={2.5} />
+              </button>
+            )}
+            <div 
+              className="cursor-grab active:cursor-grabbing p-0.5 hover:text-brand-500 transition-colors"
+              title={language === 'en' ? 'Drag to reorder' : 'Trascina per ordinare'}
+            >
+              <GripVertical size={14} />
+            </div>
+            {onMoveDown && (
+              <button
+                type="button"
+                disabled={isLast}
+                onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
+                className="p-0.5 hover:text-brand-600 dark:hover:text-brand-400 disabled:opacity-15 disabled:hover:text-slate-300 transition-colors"
+                title={language === 'en' ? 'Move down' : 'Sposta in basso'}
+              >
+                <ChevronDown size={13} strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
+
           <button 
             onClick={() => onToggle(task.id)}
-            className={`mt-1 transition-transform active:scale-90 ${task.completed ? 'text-brand-600 dark:text-brand-400' : 'text-slate-300 hover:text-brand-500'}`}
+            className={`mt-1 transition-transform active:scale-90 shrink-0 ${task.completed ? 'text-brand-600 dark:text-brand-400' : 'text-slate-300 hover:text-brand-500'}`}
           >
             {task.completed ? <CheckCircle2 size={22} strokeWidth={2.5} /> : <Circle size={22} strokeWidth={2} />}
           </button>

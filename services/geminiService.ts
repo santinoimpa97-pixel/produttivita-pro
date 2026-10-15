@@ -827,3 +827,112 @@ Genera ${params.daysPerWeek >= 2 ? 2 : 1} schede (es. Giorno A e Giorno B) bilan
   }
 };
 
+export interface AiExerciseDetails {
+  muscleGroup: MuscleGroup;
+  equipment: 'dumbbell' | 'barbell' | 'machine' | 'cables' | 'bodyweight';
+  primaryMuscles: string;
+  viewType: 'front' | 'back';
+  setup: string;
+  execution: string;
+  mistakes: string;
+  tip: string;
+}
+
+export const generateExerciseGuideDetailsWithGemini = async (
+  exerciseName: string,
+  preferredMuscleGroup?: MuscleGroup,
+  language: Language = 'it'
+): Promise<AiExerciseDetails> => {
+  const prompt = `Sei un esperto chinesiologo e personal trainer professionista.
+L'utente vuole aggiungere un esercizio alla sua biblioteca di palestra:
+Nome esercizio: "${exerciseName}"
+${preferredMuscleGroup ? `Gruppo muscolare suggerito: ${preferredMuscleGroup}` : ''}
+
+Fornisci i dettagli tecnici per l'esecuzione corretta e l'anatomia dell'esercizio in formato JSON rigoroso.
+Rispondi esclusivamente con un oggetto JSON valido (nessun testo introduttivo, nessun markdown extra oltre a eventuale blocco json):
+{
+  "muscleGroup": "chest" | "back" | "legs" | "shoulders" | "arms" | "core",
+  "equipment": "dumbbell" | "barbell" | "machine" | "cables" | "bodyweight",
+  "primaryMuscles": "stringa con i muscoli principali bersaglio separati da virgola (es. Pettorali alti, Femorali, Gran Dorsale)",
+  "viewType": "front" | "back",
+  "setup": "Spiegazione chiara e professionale del posizionamento e setup iniziale (panca, grip, scapole, piedi, ecc.) in 2-3 frasi.",
+  "execution": "Spiegazione passo-passo dell'esecuzione corretta del movimento (fase eccentrica, concentrica, respirazione, angoli gomiti/ginocchia) in 2-4 frasi.",
+  "mistakes": "2-3 errori comuni tipici da evitare separati da a capo.",
+  "tip": "Un consiglio pro o segreto di attivazione muscolare/connessione mente-muscolo in 1-2 frasi."
+}
+
+La lingua dei testi deve essere ${language === 'en' ? 'Inglese' : 'Italiano'}.`;
+
+  try {
+    const ai = getAi();
+    const res = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    const text = res.text || "";
+    const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    const validGroups: MuscleGroup[] = ['chest', 'back', 'legs', 'shoulders', 'arms', 'core'];
+    const validEquip = ['dumbbell', 'barbell', 'machine', 'cables', 'bodyweight'];
+
+    return {
+      muscleGroup: validGroups.includes(parsed.muscleGroup) ? parsed.muscleGroup : (preferredMuscleGroup || 'chest'),
+      equipment: validEquip.includes(parsed.equipment) ? parsed.equipment : 'dumbbell',
+      primaryMuscles: parsed.primaryMuscles || 'Pettorali / Muscolo Target',
+      viewType: parsed.viewType === 'back' ? 'back' : 'front',
+      setup: parsed.setup || '',
+      execution: parsed.execution || '',
+      mistakes: Array.isArray(parsed.mistakes) ? parsed.mistakes.join('\n') : (parsed.mistakes || ''),
+      tip: parsed.tip || ''
+    };
+  } catch (error) {
+    console.warn("AI generation failed or suspended key, using smart heuristics:", error);
+    const lower = exerciseName.toLowerCase();
+    let group: MuscleGroup = preferredMuscleGroup || 'chest';
+    let view: 'front' | 'back' = 'front';
+    let equip: 'dumbbell' | 'barbell' | 'machine' | 'cables' | 'bodyweight' = 'dumbbell';
+
+    if (lower.includes('squat') || lower.includes('affond') || lower.includes('leg') || lower.includes('pressa') || lower.includes('polpacc') || lower.includes('stacco')) {
+      group = 'legs';
+      view = lower.includes('femor') || lower.includes('stacco') ? 'back' : 'front';
+    } else if (lower.includes('lat') || lower.includes('dors') || lower.includes('remator') || lower.includes('pull') || lower.includes('trazion') || lower.includes('pulley')) {
+      group = 'back';
+      view = 'back';
+    } else if (lower.includes('spall') || lower.includes('military') || lower.includes('alzat') || lower.includes('deltoid') || lower.includes('overhead')) {
+      group = 'shoulders';
+      view = lower.includes('post') ? 'back' : 'front';
+    } else if (lower.includes('curl') || lower.includes('bicipit') || lower.includes('tricipit') || lower.includes('french') || lower.includes('dip') || lower.includes('pushdown')) {
+      group = 'arms';
+      view = lower.includes('tricip') ? 'back' : 'front';
+    } else if (lower.includes('crunch') || lower.includes('plank') || lower.includes('addom') || lower.includes('core')) {
+      group = 'core';
+    }
+
+    if (lower.includes('bilancier') || lower.includes('barbell')) equip = 'barbell';
+    else if (lower.includes('macchin') || lower.includes('press') || lower.includes('lever') || lower.includes('smith')) equip = 'machine';
+    else if (lower.includes('cav') || lower.includes('cable') || lower.includes('pulley')) equip = 'cables';
+    else if (lower.includes('corpo libero') || lower.includes('push up') || lower.includes('piegamenti') || lower.includes('trazioni')) equip = 'bodyweight';
+
+    return {
+      muscleGroup: group,
+      equipment: equip,
+      primaryMuscles: group === 'legs' ? 'Quadricipiti, Glutei' : group === 'back' ? 'Gran Dorsale, Trapezio' : 'Muscoli Target',
+      viewType: view,
+      setup: language === 'en'
+        ? `Ensure stable posture with neutral spine. Adjust equipment to proper anatomical height.`
+        : `Posizionati stabilmente garantendo bacino saldo e colonna vertebrale neutra. Imposta l'attrezzo alla corretta altezza.`,
+      execution: language === 'en'
+        ? `Execute controlled eccentric phase (2-3s), maintain continuous muscle tension and squeeze hard at peak contraction.`
+        : `Esegui una discesa controllata (2-3 secondi), mantieni la tensione muscolare costante ed effettua una contrazione decisa nel punto massimo.`,
+      mistakes: language === 'en'
+        ? `Avoid bouncing weights or using body momentum.\nDo not shorten the range of motion.`
+        : `Evita di utilizzare slancio con il busto o scatti violenti.\nNon accorciare il range di movimento per usare troppo carico.`,
+      tip: language === 'en'
+        ? `Focus on mind-muscle connection: feel the target muscle stretching and contracting with intent.`
+        : `Focus sulla connessione mente-muscolo: visualizza il muscolo target che si stira e si accorcia con controllo ad ogni ripetizione.`
+    };
+  }
+};
+

@@ -16,6 +16,8 @@ export interface TaskListProps {
   onUpdateSubTask: (taskId: string, subTaskId: string, newText: string) => void;
   onGenerateSubtasks: (taskId: string, taskText: string) => void;
   generatingTaskId: string | null;
+  onReorderTasks?: (sourceId: string, targetId: string) => void;
+  onMoveTask?: (taskId: string, direction: 'up' | 'down', scopedTaskIds?: string[]) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -29,6 +31,8 @@ const TaskList: React.FC<TaskListProps> = ({
   onUpdateSubTask,
   onGenerateSubtasks,
   generatingTaskId,
+  onReorderTasks,
+  onMoveTask,
 }) => {
   const { t } = useLanguage();
   if (tasks.length === 0) {
@@ -41,10 +45,12 @@ const TaskList: React.FC<TaskListProps> = ({
     );
   }
 
+  const taskIds = tasks.map(t => t.id);
+
   return (
     <div className="space-y-4">
       <AnimatePresence mode="popLayout">
-        {tasks.map((task) => (
+        {tasks.map((task, idx) => (
           <TaskItem
             key={task.id}
             task={task}
@@ -57,6 +63,11 @@ const TaskList: React.FC<TaskListProps> = ({
             onUpdateSubTask={onUpdateSubTask}
             onGenerateSubtasks={onGenerateSubtasks}
             isGenerating={generatingTaskId === task.id}
+            isFirst={idx === 0}
+            isLast={idx === tasks.length - 1}
+            onMoveUp={onMoveTask ? () => onMoveTask(task.id, 'up', taskIds) : undefined}
+            onMoveDown={onMoveTask ? () => onMoveTask(task.id, 'down', taskIds) : undefined}
+            onReorder={onReorderTasks}
           />
         ))}
       </AnimatePresence>

@@ -19,6 +19,8 @@ interface TasksViewProps {
   onUpdateSubTask: (taskId: string, subTaskId: string, newText: string) => void;
   onGenerateSubtasks: (taskId: string, taskText: string) => void;
   generatingTaskId: string | null;
+  onReorderTasks?: (sourceId: string, targetId: string) => void;
+  onMoveTask?: (taskId: string, direction: 'up' | 'down', scopedTaskIds?: string[]) => void;
 }
 
 const TasksView: React.FC<TasksViewProps> = (props) => {

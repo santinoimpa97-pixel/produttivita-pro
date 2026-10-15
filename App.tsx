@@ -291,6 +291,22 @@ function App() {
         dueDate: task.due_date,
         subTasks: subTasksData.filter(sub => sub.task_id === task.id)
       }));
+
+      try {
+        const orderSaved = localStorage.getItem('produttivita_tasks_order');
+        if (orderSaved) {
+          const ids = JSON.parse(orderSaved) as string[];
+          tasksWithSubTasks.sort((a, b) => {
+            const indexA = ids.indexOf(a.id);
+            const indexB = ids.indexOf(b.id);
+            if (indexA === -1 && indexB === -1) return 0;
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+          });
+        }
+      } catch {}
+
       setTasks(tasksWithSubTasks);
 
       const routinesData = routinesRes.data || [];
@@ -414,6 +430,65 @@ function App() {
       console.error("Failed to update task:", error.message);
       setTasks(oldTasks);
     }
+  };
+
+  const handleReorderTasks = (sourceTaskId: string, targetTaskId: string) => {
+    setTasks(prev => {
+      const sourceIdx = prev.findIndex(t => t.id === sourceTaskId);
+      const targetIdx = prev.findIndex(t => t.id === targetTaskId);
+      if (sourceIdx === -1 || targetIdx === -1 || sourceIdx === targetIdx) return prev;
+      
+      const updated = [...prev];
+      const [moved] = updated.splice(sourceIdx, 1);
+      const newTargetIdx = updated.findIndex(t => t.id === targetTaskId);
+      updated.splice(newTargetIdx, 0, moved);
+      
+      try {
+        localStorage.setItem('produttivita_tasks_order', JSON.stringify(updated.map(t => t.id)));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const handleMoveTask = (taskId: string, direction: 'up' | 'down', scopedTaskIds?: string[]) => {
+    setTasks(prev => {
+      if (scopedTaskIds && scopedTaskIds.length > 1) {
+        const scopeIdx = scopedTaskIds.indexOf(taskId);
+        if (scopeIdx === -1) return prev;
+        const targetScopeIdx = direction === 'up' ? scopeIdx - 1 : scopeIdx + 1;
+        if (targetScopeIdx < 0 || targetScopeIdx >= scopedTaskIds.length) return prev;
+        const targetId = scopedTaskIds[targetScopeIdx];
+        
+        const sourceIdx = prev.findIndex(t => t.id === taskId);
+        const targetIdx = prev.findIndex(t => t.id === targetId);
+        if (sourceIdx === -1 || targetIdx === -1) return prev;
+        
+        const updated = [...prev];
+        const [moved] = updated.splice(sourceIdx, 1);
+        const newTargetIdx = updated.findIndex(t => t.id === targetId);
+        const insertAt = direction === 'up' ? newTargetIdx : newTargetIdx + 1;
+        updated.splice(insertAt, 0, moved);
+        
+        try {
+          localStorage.setItem('produttivita_tasks_order', JSON.stringify(updated.map(t => t.id)));
+        } catch {}
+        return updated;
+      }
+
+      const idx = prev.findIndex(t => t.id === taskId);
+      if (idx === -1) return prev;
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      
+      const updated = [...prev];
+      const [moved] = updated.splice(idx, 1);
+      updated.splice(targetIdx, 0, moved);
+      
+      try {
+        localStorage.setItem('produttivita_tasks_order', JSON.stringify(updated.map(t => t.id)));
+      } catch {}
+      return updated;
+    });
   };
 
   // SubTask Handlers
@@ -939,6 +1014,8 @@ function App() {
           onUpdateSubTask={handleUpdateSubTask}
           onGenerateSubtasks={handleGenerateSubtasks}
           generatingTaskId={generatingTaskId}
+          onReorderTasks={handleReorderTasks}
+          onMoveTask={handleMoveTask}
         />;
       case 'fitness':
         return <FitnessView

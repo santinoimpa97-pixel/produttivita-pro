@@ -39,7 +39,7 @@ import {
 import { EXERCISE_GUIDES, STARTER_ROUTINES, DEFAULT_WEEKLY_SCHEDULE } from '../data/exercisesData';
 import ExerciseDetailModal from './ExerciseDetailModal';
 import { useLanguage } from '../LanguageContext';
-import { generateWorkoutRoutinesWithGemini } from '../services/geminiService';
+import { generateWorkoutRoutinesWithGemini, generateExerciseGuideDetailsWithGemini } from '../services/geminiService';
 
 interface FitnessViewProps {
   onStartWorkout: (routine: WorkoutRoutine) => void;
@@ -114,6 +114,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
 
   // New Custom Exercise modal state
   const [isAddingCustomExercise, setIsAddingCustomExercise] = useState(false);
+  const [isAiFillingExercise, setIsAiFillingExercise] = useState(false);
   const [customExName, setCustomExName] = useState('');
   const [customExNameEn, setCustomExNameEn] = useState('');
   const [customExMuscleGroup, setCustomExMuscleGroup] = useState<MuscleGroup>('chest');
@@ -361,6 +362,32 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
   };
 
   // Helper to add custom exercise
+  const handleAiFillExercise = async () => {
+    if (!customExName.trim() || isAiFillingExercise) return;
+    setIsAiFillingExercise(true);
+    try {
+      const details = await generateExerciseGuideDetailsWithGemini(
+        customExName.trim(),
+        customExMuscleGroup,
+        language
+      );
+      if (details) {
+        setCustomExMuscleGroup(details.muscleGroup);
+        setCustomExEquipment(details.equipment);
+        setCustomExPrimaryMuscles(details.primaryMuscles);
+        setCustomExViewType(details.viewType);
+        setCustomExSetup(details.setup);
+        setCustomExExecution(details.execution);
+        setCustomExMistakes(details.mistakes);
+        setCustomExTip(details.tip);
+      }
+    } catch (e) {
+      console.error('Failed to auto-fill exercise with AI', e);
+    } finally {
+      setIsAiFillingExercise(false);
+    }
+  };
+
   const handleCreateCustomExerciseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customExName.trim()) return;
@@ -1871,9 +1898,45 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                     required
                     value={customExName}
                     onChange={e => setCustomExName(e.target.value)}
-                    placeholder="es. Croci ai cavi alti, Hip Thrust con bilanciere..."
+                    placeholder="es. Croci ai cavi alti, Hip Thrust con bilanciere, Face Pull..."
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
+                </div>
+
+                {/* AI Auto-Fill Card */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <Sparkles size={16} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>{language === 'en' ? 'AI Coach Auto-Fill' : 'Compilazione Automatica con IA'}</span>
+                        <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold rounded-full">Gemini</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {language === 'en' ? 'Fills muscle group, setup, execution, mistakes & pro tip' : 'Compila per te muscoli, setup, esecuzione corretta ed errori'}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!customExName.trim() || isAiFillingExercise}
+                    onClick={handleAiFillExercise}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black shadow-md shadow-emerald-600/20 transition-all shrink-0 active:scale-95"
+                  >
+                    {isAiFillingExercise ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>{language === 'en' ? 'Generating...' : 'Generazione...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} className="text-yellow-300" />
+                        <span>{language === 'en' ? 'Auto-Fill with AI' : 'Compila con IA'}</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1960,15 +2023,56 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    {language === 'en' ? 'Setup & Execution Notes' : 'Consigli di Esecuzione & Posizionamento'}
+                    {language === 'en' ? 'Setup & Positioning' : 'Setup & Posizionamento'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={customExSetup}
+                    onChange={e => setCustomExSetup(e.target.value)}
+                    placeholder="es. Posiziona la panca a 30°, contrai le scapole e mantieni i piedi ben saldi a terra..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'en' ? 'Correct Execution' : 'Esecuzione Corretta'}
                   </label>
                   <textarea
                     rows={2}
                     value={customExExecution}
                     onChange={e => setCustomExExecution(e.target.value)}
-                    placeholder="es. Posiziona la panca a 30°, contrai le scapole e mantieni i gomiti leggermente flessi..."
+                    placeholder="es. Scendi in 3 secondi controllando il carico, sfiora il petto e risali senza bloccare i gomiti..."
                     className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {language === 'en' ? 'Common Mistakes to Avoid' : 'Errori Comuni da Evitare'}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={customExMistakes}
+                      onChange={e => setCustomExMistakes(e.target.value)}
+                      placeholder="es. Gomiti a 90°, rimbalzo sul petto (separati da a capo)"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {language === 'en' ? 'Pro Tip / Mind-Muscle' : 'Consiglio del Coach'}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={customExTip}
+                      onChange={e => setCustomExTip(e.target.value)}
+                      placeholder="es. Pensa a spingere i gomiti l'uno verso l'altro per isolare il petto..."
+                      className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
