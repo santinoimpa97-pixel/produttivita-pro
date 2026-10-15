@@ -297,7 +297,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-28 px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-24 px-3 sm:px-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -314,7 +314,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="relative w-full max-w-2xl bg-white/95 dark:bg-[#0b1220]/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden flex flex-col z-10"
+            className="relative w-full max-w-2xl max-h-[85dvh] bg-white/95 dark:bg-[#0b1220]/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden flex flex-col z-10"
           >
             {/* Search Input Bar */}
             <div className="flex items-center px-5 py-4 border-b border-slate-100 dark:border-slate-800/60 gap-3">

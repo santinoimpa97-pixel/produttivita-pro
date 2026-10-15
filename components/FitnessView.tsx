@@ -24,7 +24,8 @@ import {
   Trash2, 
   Activity,
   History,
-  BookOpen
+  BookOpen,
+  Edit3
 } from 'lucide-react';
 import { 
   WorkoutRoutine, 
@@ -32,7 +33,8 @@ import {
   ExerciseGuide, 
   MuscleGroup, 
   CompletedWorkoutLog,
-  WeeklyScheduleDay
+  WeeklyScheduleDay,
+  ExerciseWeightRecord
 } from '../types';
 import { EXERCISE_GUIDES, STARTER_ROUTINES, DEFAULT_WEEKLY_SCHEDULE } from '../data/exercisesData';
 import ExerciseDetailModal from './ExerciseDetailModal';
@@ -48,6 +50,8 @@ interface FitnessViewProps {
 type TabType = 'routines' | 'exercises' | 'history';
 
 const ROUTINES_STORAGE_KEY = 'produttivita_gym_routines_v1';
+const CUSTOM_EXERCISES_STORAGE_KEY = 'produttivita_gym_custom_exercises_v1';
+const EXERCISE_RECORDS_STORAGE_KEY = 'produttivita_gym_exercise_records_v1';
 
 export const FitnessView: React.FC<FitnessViewProps> = ({
   onStartWorkout,
@@ -57,6 +61,41 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
   const { language } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<TabType>('routines');
+
+  // Custom User-Created Exercises
+  const [customExercises, setCustomExercises] = useState<ExerciseGuide[]>(() => {
+    try {
+      const saved = localStorage.getItem(CUSTOM_EXERCISES_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to parse custom exercises from storage', e);
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CUSTOM_EXERCISES_STORAGE_KEY, JSON.stringify(customExercises));
+    } catch (e) {
+      console.error('Failed to save custom exercises', e);
+    }
+  }, [customExercises]);
+
+  // Combined exercise guide list
+  const allExercises = useMemo(() => {
+    return [...customExercises, ...EXERCISE_GUIDES];
+  }, [customExercises]);
+
+  // Previous exercise weight records (load progression)
+  const [exerciseRecords, setExerciseRecords] = useState<Record<string, ExerciseWeightRecord>>(() => {
+    try {
+      const saved = localStorage.getItem(EXERCISE_RECORDS_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
+  // Routines state
   const [routines, setRoutines] = useState<WorkoutRoutine[]>(() => {
     try {
       const saved = localStorage.getItem(ROUTINES_STORAGE_KEY);
@@ -66,6 +105,22 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
     }
     return STARTER_ROUTINES;
   });
+
+  // Routine Weights Editor modal state
+  const [editingRoutineWeights, setEditingRoutineWeights] = useState<WorkoutRoutine | null>(null);
+
+  // New Custom Exercise modal state
+  const [isAddingCustomExercise, setIsAddingCustomExercise] = useState(false);
+  const [customExName, setCustomExName] = useState('');
+  const [customExNameEn, setCustomExNameEn] = useState('');
+  const [customExMuscleGroup, setCustomExMuscleGroup] = useState<MuscleGroup>('chest');
+  const [customExEquipment, setCustomExEquipment] = useState<'dumbbell' | 'barbell' | 'machine' | 'cables' | 'bodyweight'>('dumbbell');
+  const [customExPrimaryMuscles, setCustomExPrimaryMuscles] = useState('');
+  const [customExViewType, setCustomExViewType] = useState<'front' | 'back'>('front');
+  const [customExSetup, setCustomExSetup] = useState('');
+  const [customExExecution, setCustomExExecution] = useState('');
+  const [customExMistakes, setCustomExMistakes] = useState('');
+  const [customExTip, setCustomExTip] = useState('');
 
   // Save custom routines whenever they change
   useEffect(() => {
@@ -245,9 +300,9 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
     }));
   };
 
-  // Filtered exercises for the library tab
+  // Filtered exercises for the library tab (includes default and custom)
   const filteredExercises = useMemo(() => {
-    return EXERCISE_GUIDES.filter(ex => {
+    return allExercises.filter(ex => {
       const matchesMuscle = selectedMuscle === 'all' || ex.muscleGroup === selectedMuscle;
       const query = searchQuery.trim().toLowerCase();
       const matchesSearch = !query || 
@@ -256,7 +311,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
         ex.primaryMuscles.some(m => m.toLowerCase().includes(query));
       return matchesMuscle && matchesSearch;
     });
-  }, [selectedMuscle, searchQuery]);
+  }, [allExercises, selectedMuscle, searchQuery]);
 
   // Overall fitness statistics
   const stats = useMemo(() => {
@@ -285,21 +340,64 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
     };
   }, [workoutLogs]);
 
-  // Muscle filter buttons
+  // Muscle filter buttons (counts all exercises)
   const muscleFilters: { id: MuscleGroup | 'all'; label: string; count: number }[] = [
-    { id: 'all', label: language === 'en' ? 'All' : 'Tutti', count: EXERCISE_GUIDES.length },
-    { id: 'chest', label: language === 'en' ? 'Chest' : 'Petto', count: EXERCISE_GUIDES.filter(e => e.muscleGroup === 'chest').length },
-    { id: 'back', label: language === 'en' ? 'Back' : 'Dorso', count: EXERCISE_GUIDES.filter(e => e.muscleGroup === 'back').length },
-    { id: 'legs', label: language === 'en' ? 'Legs' : 'Gambe', count: EXERCISE_GUIDES.filter(e => e.muscleGroup === 'legs').length },
-    { id: 'shoulders', label: language === 'en' ? 'Shoulders' : 'Spalle', count: EXERCISE_GUIDES.filter(e => e.muscleGroup === 'shoulders').length },
-    { id: 'arms', label: language === 'en' ? 'Arms' : 'Braccia', count: EXERCISE_GUIDES.filter(e => e.muscleGroup === 'arms').length },
-    { id: 'core', label: language === 'en' ? 'Core' : 'Addome', count: EXERCISE_GUIDES.filter(e => e.muscleGroup === 'core').length },
+    { id: 'all', label: language === 'en' ? 'All' : 'Tutti', count: allExercises.length },
+    { id: 'chest', label: language === 'en' ? 'Chest' : 'Petto', count: allExercises.filter(e => e.muscleGroup === 'chest').length },
+    { id: 'back', label: language === 'en' ? 'Back' : 'Dorso', count: allExercises.filter(e => e.muscleGroup === 'back').length },
+    { id: 'legs', label: language === 'en' ? 'Legs' : 'Gambe', count: allExercises.filter(e => e.muscleGroup === 'legs').length },
+    { id: 'shoulders', label: language === 'en' ? 'Shoulders' : 'Spalle', count: allExercises.filter(e => e.muscleGroup === 'shoulders').length },
+    { id: 'arms', label: language === 'en' ? 'Arms' : 'Braccia', count: allExercises.filter(e => e.muscleGroup === 'arms').length },
+    { id: 'core', label: language === 'en' ? 'Core' : 'Addome', count: allExercises.filter(e => e.muscleGroup === 'core').length },
   ];
 
   // Helper to open exercise guide by ID
   const handleOpenExerciseById = (exerciseId: string) => {
-    const guide = EXERCISE_GUIDES.find(e => e.id === exerciseId);
+    const guide = allExercises.find(e => e.id === exerciseId);
     if (guide) setSelectedExercise(guide);
+  };
+
+  // Helper to add custom exercise
+  const handleCreateCustomExerciseSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customExName.trim()) return;
+
+    const newGuide: ExerciseGuide = {
+      id: `custom-${Date.now()}`,
+      name: customExName.trim(),
+      nameEn: customExNameEn.trim() || customExName.trim(),
+      muscleGroup: customExMuscleGroup,
+      primaryMuscles: customExPrimaryMuscles ? customExPrimaryMuscles.split(',').map(m => m.trim()).filter(Boolean) : [customExMuscleGroup],
+      equipment: customExEquipment,
+      difficulty: 'beginner',
+      viewType: customExViewType,
+      setup: customExSetup.trim() || (language === 'en' ? 'Maintain upright posture with neutral spine.' : 'Posizionati correttamente con postura eretta e schiena neutra.'),
+      setupEn: customExSetup.trim() || 'Maintain upright posture with neutral spine.',
+      execution: customExExecution.trim() || (language === 'en' ? 'Perform movement with control contracting target muscle.' : 'Esegui il movimento in modo controllato contraendo il muscolo bersaglio.'),
+      executionEn: customExExecution.trim() || 'Perform movement with control contracting target muscle.',
+      commonMistakes: customExMistakes ? customExMistakes.split('\n').map(m => m.trim()).filter(Boolean) : ['Eccessivo slancio del busto'],
+      commonMistakesEn: ['Using momentum'],
+      tip: customExTip.trim() || 'Concentrati sulla connessione mente-muscolo.'
+    };
+
+    setCustomExercises(prev => [newGuide, ...prev]);
+    setIsAddingCustomExercise(false);
+    setCustomExName('');
+    setCustomExNameEn('');
+    setCustomExPrimaryMuscles('');
+    setCustomExSetup('');
+    setCustomExExecution('');
+    setCustomExMistakes('');
+    setCustomExTip('');
+  };
+
+  const handleDeleteCustomExercise = (id: string) => {
+    if (window.confirm(language === 'en' ? 'Delete this custom exercise?' : 'Eliminare questo esercizio personalizzato?')) {
+      setCustomExercises(prev => prev.filter(ex => ex.id !== id));
+      if (selectedExercise?.id === id) {
+        setSelectedExercise(null);
+      }
+    }
   };
 
   // Helper to create a new routine
@@ -308,7 +406,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
     if (!newRoutineTitle.trim()) return;
 
     const chosenExercises: WorkoutExercise[] = newRoutineSelectedExIds.map((exId, index) => {
-      const guide = EXERCISE_GUIDES.find(g => g.id === exId);
+      const guide = allExercises.find(g => g.id === exId);
       return {
         id: `we-custom-${Date.now()}-${index}`,
         exerciseId: exId,
@@ -347,35 +445,35 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* 1. WEEKLY COACH SCHEDULE BAR */}
-      <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-4 sm:p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0">
               <CalendarDays size={16} />
             </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-white">
+            <div className="min-w-0">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white truncate">
                 {language === 'en' ? 'Your Weekly Training Schedule' : 'Il Tuo Programma Settimanale'}
               </h3>
-              <p className="text-[11px] text-slate-400">
-                {language === 'en' ? 'Follow your weekly plan day by day' : 'Giorno per giorno: sai sempre quando allenarti e quando riposare'}
+              <p className="text-[11px] text-slate-400 truncate">
+                {language === 'en' ? 'Follow your weekly plan day by day' : 'Giorno per giorno: sai sempre quando allenarti'}
               </p>
             </div>
           </div>
 
           <button
             onClick={() => setIsEditingSchedule(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold transition-colors shrink-0"
           >
             <Settings2 size={13} />
-            <span>{language === 'en' ? 'Customize Days' : 'Personalizza Giorni'}</span>
+            <span className="hidden xs:inline">{language === 'en' ? 'Customize' : 'Personalizza'}</span>
           </button>
         </div>
 
-        {/* 7 Days Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+        {/* 7 Days Row - Swipeable on mobile, grid on desktop */}
+        <div className="flex overflow-x-auto no-scrollbar pb-1 gap-2 sm:gap-2.5 sm:grid sm:grid-cols-4 lg:grid-cols-7 snap-x">
           {orderedWeekDays.map(day => {
             const isToday = day.dayIndex === todayDayIndex;
             const assigned = routines.find(r => r.id === day.assignedRoutineId) || (day.isWorkoutDay ? routines[0] : null);
@@ -383,7 +481,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
             return (
               <div
                 key={`schedule-day-${day.dayIndex}`}
-                className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between space-y-2 relative ${
+                className={`shrink-0 w-[125px] sm:w-auto sm:min-w-0 sm:flex-1 snap-start p-3 rounded-2xl border transition-all flex flex-col justify-between space-y-2 relative ${
                   isToday
                     ? 'bg-emerald-500/10 dark:bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/30 shadow-md shadow-emerald-500/10'
                     : day.isWorkoutDay
@@ -449,7 +547,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
       </div>
 
       {/* 2. TODAY'S COACH HERO DIRECTIVE */}
-      <div className={`relative overflow-hidden rounded-3xl p-6 sm:p-8 shadow-xl border transition-all ${
+      <div className={`relative overflow-hidden rounded-3xl p-4 sm:p-8 shadow-xl border transition-all ${
         todaySchedule.isWorkoutDay && !isTodayWorkoutDone
           ? 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 text-white border-emerald-500/30 shadow-emerald-950/25'
           : todaySchedule.isWorkoutDay && isTodayWorkoutDone
@@ -483,7 +581,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
             </div>
 
             {/* Headline */}
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            <h1 className="text-xl sm:text-3xl font-black tracking-tight text-white leading-tight break-words">
               {todaySchedule.isWorkoutDay ? (
                 isTodayWorkoutDone ? (
                   language === 'en' ? 'Session Completed! Great job.' : 'Sessione Completata! Grande lavoro.'
@@ -554,55 +652,56 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
         </div>
 
         {/* Quick Stats bar inside hero */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/15">
-          <div className="bg-black/20 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-            <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-5 pt-5 border-t border-white/15">
+          <div className="bg-black/20 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/10">
+            <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider truncate">
               {language === 'en' ? 'This Week' : 'Questa Settimana'}
             </div>
-            <div className="text-xl font-black text-white mt-0.5 flex items-center gap-1.5">
-              <Flame size={18} className="text-amber-400" />
-              <span>{stats.workoutsThisWeek} {language === 'en' ? 'sessions' : 'allenamenti'}</span>
+            <div className="text-sm sm:text-xl font-black text-white mt-0.5 flex items-center gap-1.5 truncate">
+              <Flame size={15} className="text-amber-400 shrink-0" />
+              <span className="truncate">{stats.workoutsThisWeek} {language === 'en' ? 'sessions' : 'allenamenti'}</span>
             </div>
           </div>
 
-          <div className="bg-black/20 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-            <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
+          <div className="bg-black/20 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/10">
+            <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider truncate">
               {language === 'en' ? 'Total Workouts' : 'Totale Sessioni'}
             </div>
-            <div className="text-xl font-black text-white mt-0.5 flex items-center gap-1.5">
-              <Trophy size={18} className="text-yellow-400" />
+            <div className="text-sm sm:text-xl font-black text-white mt-0.5 flex items-center gap-1.5">
+              <Trophy size={15} className="text-yellow-400 shrink-0" />
               <span>{stats.totalWorkouts}</span>
             </div>
           </div>
 
-          <div className="bg-black/20 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-            <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
+          <div className="bg-black/20 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/10">
+            <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider truncate">
               {language === 'en' ? 'Volume Lifted' : 'Volume Sollevato'}
             </div>
-            <div className="text-xl font-black text-white mt-0.5 flex items-center gap-1.5">
-              <Activity size={18} className="text-emerald-300" />
-              <span>{stats.totalVolumeKg.toLocaleString()} kg</span>
+            <div className="text-sm sm:text-xl font-black text-white mt-0.5 flex items-center gap-1.5 truncate">
+              <Activity size={15} className="text-emerald-300 shrink-0" />
+              <span className="truncate">{stats.totalVolumeKg.toLocaleString()} kg</span>
             </div>
           </div>
 
-          <div className="bg-black/20 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-            <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
+          <div className="bg-black/20 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/10">
+            <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider truncate">
               {language === 'en' ? 'Total Time' : 'Tempo Totale'}
             </div>
-            <div className="text-xl font-black text-white mt-0.5 flex items-center gap-1.5">
-              <Clock size={18} className="text-sky-300" />
-              <span>{stats.totalDurationMin} min</span>
+            <div className="text-sm sm:text-xl font-black text-white mt-0.5 flex items-center gap-1.5 truncate">
+              <Clock size={15} className="text-sky-300 shrink-0" />
+              <span className="truncate">{stats.totalDurationMin} min</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs navigation */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-        <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80">
+      {/* Tabs navigation & action buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+        {/* Scrollable tabs on mobile */}
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 overflow-x-auto no-scrollbar max-w-full">
           <button
             onClick={() => setActiveTab('routines')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap shrink-0 ${
               activeTab === 'routines'
                 ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -617,7 +716,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
 
           <button
             onClick={() => setActiveTab('exercises')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap shrink-0 ${
               activeTab === 'exercises'
                 ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -626,13 +725,13 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
             <BookOpen size={15} />
             <span>{language === 'en' ? 'Exercises & 3D Anatomy' : 'Esercizi & Anatomia'}</span>
             <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-              {EXERCISE_GUIDES.length}
+              {allExercises.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap shrink-0 ${
               activeTab === 'history'
                 ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -649,24 +748,24 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
         </div>
 
         {activeTab === 'routines' && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
             <button
               onClick={() => setIsGeneratingWithAi(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-emerald-600/20 transition-all active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-emerald-600/20 transition-all active:scale-95 shrink-0"
             >
               <Sparkles size={14} className="text-yellow-300" />
               <span>{language === 'en' ? 'AI Routine Generator' : 'Genera con Coach IA'}</span>
             </button>
             <button
               onClick={() => setIsCreatingRoutine(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors shrink-0"
             >
               <Plus size={14} />
-              <span className="hidden sm:inline">{language === 'en' ? 'New Routine' : 'Nuova Scheda'}</span>
+              <span>{language === 'en' ? 'New Routine' : 'Nuova Scheda'}</span>
             </button>
             <button
               onClick={handleResetToDefaultRoutines}
-              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
               title={language === 'en' ? 'Reset starter routines' : 'Ripristina schede predefinite'}
             >
               <Layers size={15} />
@@ -711,13 +810,25 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                     <div className="space-y-2 pt-2">
                       <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
                         <span>{language === 'en' ? 'Exercises' : 'Esercizi'} ({routine.exercises.length})</span>
-                        <button
-                          onClick={() => setExpandedRoutineId(isExpanded ? null : routine.id)}
-                          className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 text-[11px]"
-                        >
-                          <span>{isExpanded ? (language === 'en' ? 'Hide details' : 'Comprimi') : (language === 'en' ? 'Show details' : 'Dettagli')}</span>
-                          {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setEditingRoutineWeights(routine)}
+                            className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 text-[11px] font-bold"
+                            title={language === 'en' ? 'Edit routine loads and sets' : 'Modifica carichi e serie'}
+                          >
+                            <Edit3 size={12} />
+                            <span>{language === 'en' ? 'Edit weights' : 'Modifica carichi'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedRoutineId(isExpanded ? null : routine.id)}
+                            className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-0.5 text-[11px]"
+                          >
+                            <span>{isExpanded ? (language === 'en' ? 'Hide details' : 'Comprimi') : (language === 'en' ? 'Show details' : 'Dettagli')}</span>
+                            {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                          </button>
+                        </div>
                       </div>
 
                       {/* Mini exercise pills preview */}
@@ -729,9 +840,9 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 text-xs font-semibold transition-colors group"
                             title={language === 'en' ? 'Click to inspect execution' : 'Clicca per vedere la corretta esecuzione'}
                           >
-                            <Dumbbell size={11} className="text-emerald-500 group-hover:scale-110 transition-transform" />
-                            <span>{ex.name}</span>
-                            <span className="text-[10px] text-slate-400">({ex.sets.length}s)</span>
+                            <Dumbbell size={11} className="text-emerald-500 group-hover:scale-110 transition-transform shrink-0" />
+                            <span className="truncate max-w-[130px] sm:max-w-none">{ex.name}</span>
+                            <span className="text-[10px] text-slate-400 shrink-0">({ex.sets.length}s)</span>
                           </button>
                         ))}
                       </div>
@@ -750,23 +861,30 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                                 key={`detail-${ex.id || idx}`}
                                 className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between"
                               >
-                                <div className="space-y-0.5">
-                                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                    <span>{idx + 1}.</span>
-                                    <span>{ex.name}</span>
+                                <div className="space-y-0.5 min-w-0 flex-1">
+                                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 truncate">
+                                    <span className="shrink-0">{idx + 1}.</span>
+                                    <span className="truncate">{ex.name}</span>
                                     <button
                                       onClick={() => handleOpenExerciseById(ex.exerciseId)}
-                                      className="p-0.5 text-emerald-500 hover:text-emerald-600 rounded-md"
+                                      className="p-0.5 text-emerald-500 hover:text-emerald-600 rounded-md shrink-0"
                                       title={language === 'en' ? 'View form guide' : 'Vedi guida esecuzione'}
                                     >
                                       <Info size={13} />
                                     </button>
                                   </div>
-                                  <div className="text-[11px] text-slate-400">
-                                    {ex.notes || `${ex.sets.length} serie • ${ex.sets[0]?.reps || 10} reps`}
+                                  <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap">
+                                    <span>
+                                      {ex.sets.length} serie • {ex.sets[0]?.weightKg || 0} kg × {ex.sets[0]?.reps || 10} reps
+                                    </span>
+                                    {exerciseRecords[ex.exerciseId] && (
+                                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                                        💡 Ultimo: {exerciseRecords[ex.exerciseId].lastWeightKg} kg × {exerciseRecords[ex.exerciseId].lastReps} reps
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
-                                <div className="text-right text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                <div className="text-right text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
                                   {ex.targetRestSeconds || 90}s rec
                                 </div>
                               </div>
@@ -797,25 +915,36 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
       {/* TAB 2: EXERCISE LIBRARY & 3D ANATOMY */}
       {activeTab === 'exercises' && (
         <div className="space-y-6">
-          {/* Search bar & Muscle Filters */}
+          {/* Search bar, Add Exercise Button & Muscle Filters */}
           <div className="space-y-3">
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder={language === 'en' ? 'Search exercise or muscle (e.g. chest, lat machine, squat)...' : 'Cerca esercizio o muscolo (es. panca, squat, dorsali, tricipiti)...'}
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
-                >
-                  ✕
-                </button>
-              )}
+            <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center">
+              <div className="relative flex-1">
+                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder={language === 'en' ? 'Search exercise or muscle (e.g. chest, squat, lats)...' : 'Cerca esercizio o muscolo (es. panca, squat, dorsali, tricipiti)...'}
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAddingCustomExercise(true)}
+                className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all shrink-0"
+              >
+                <Plus size={16} strokeWidth={3} />
+                <span>{language === 'en' ? 'Add Custom Exercise' : 'Nuovo Esercizio'}</span>
+              </button>
             </div>
 
             {/* Muscle pills filter */}
@@ -855,9 +984,29 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                     <span className="px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">
                       {exercise.muscleGroup}
                     </span>
-                    <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px] font-semibold capitalize">
-                      {exercise.equipment}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {exercise.id.startsWith('custom-') && (
+                        <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider">
+                          Personalizzato
+                        </span>
+                      )}
+                      <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px] font-semibold capitalize">
+                        {exercise.equipment}
+                      </span>
+                      {exercise.id.startsWith('custom-') && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCustomExercise(exercise.id);
+                          }}
+                          className="p-1 text-slate-400 hover:text-rose-500 rounded-md transition-colors"
+                          title="Elimina esercizio personalizzato"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -1022,7 +1171,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5"
+              className="w-full max-w-lg max-h-[90dvh] overflow-y-auto custom-scrollbar rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-2xl space-y-5"
             >
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
@@ -1088,7 +1237,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                     {language === 'en' ? 'Select Exercises to Include' : 'Scegli Esercizi da Includere'}
                   </label>
                   <div className="max-h-48 overflow-y-auto space-y-1.5 p-2 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80">
-                    {EXERCISE_GUIDES.map(guide => {
+                    {allExercises.map(guide => {
                       const isSelected = newRoutineSelectedExIds.includes(guide.id);
                       return (
                         <button
@@ -1142,7 +1291,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5"
+              className="w-full max-w-lg max-h-[90dvh] overflow-y-auto custom-scrollbar rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-2xl space-y-5"
             >
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2.5">
@@ -1329,7 +1478,7 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5"
+              className="w-full max-w-xl max-h-[90dvh] overflow-y-auto custom-scrollbar rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-2xl space-y-5"
             >
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2.5">
@@ -1402,9 +1551,12 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                 {orderedWeekDays.map(day => (
                   <div
                     key={`edit-day-${day.dayIndex}`}
-                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70 flex items-center justify-between gap-3"
+                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between sm:justify-start gap-3">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">
+                        {day.dayName}
+                      </div>
                       <button
                         type="button"
                         onClick={() => handleToggleDay(day.dayIndex)}
@@ -1416,18 +1568,13 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                       >
                         {day.isWorkoutDay ? 'Palestra' : 'Riposo'}
                       </button>
-                      <div>
-                        <div className="text-xs font-bold text-slate-900 dark:text-white">
-                          {day.dayName}
-                        </div>
-                      </div>
                     </div>
 
                     {day.isWorkoutDay && (
                       <select
                         value={day.assignedRoutineId || routines[0]?.id}
                         onChange={e => handleAssignRoutine(day.dayIndex, e.target.value)}
-                        className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 max-w-[200px] truncate"
+                        className="w-full sm:w-auto px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:max-w-[200px] truncate"
                       >
                         {routines.map(r => (
                           <option key={r.id} value={r.id}>
@@ -1449,6 +1596,342 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                   {language === 'en' ? 'Save Schedule' : 'Salva Programma'}
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Edit Weights & Sets for Routine */}
+      <AnimatePresence>
+        {editingRoutineWeights && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-xl max-h-[90dvh] overflow-y-auto custom-scrollbar rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-2xl space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    <Edit3 size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-slate-900 dark:text-white text-base">
+                      {language === 'en' ? 'Edit Routine Weights & Sets' : 'Modifica Carichi & Serie'}
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      {editingRoutineWeights.title} ({editingRoutineWeights.dayTag})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditingRoutineWeights(null)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {editingRoutineWeights.exercises.map((ex, exIdx) => (
+                  <div key={ex.id || exIdx} className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/70 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-600 text-xs font-black flex items-center justify-center">{exIdx + 1}</span>
+                        <span className="truncate max-w-[200px] sm:max-w-none">{ex.name}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newSet = {
+                            id: `s-${Date.now()}-${ex.sets.length + 1}`,
+                            setNumber: ex.sets.length + 1,
+                            reps: ex.sets[ex.sets.length - 1]?.reps || 10,
+                            weightKg: ex.sets[ex.sets.length - 1]?.weightKg || 10,
+                            completed: false
+                          };
+                          setEditingRoutineWeights(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              exercises: prev.exercises.map(item => item.id === ex.id ? { ...item, sets: [...item.sets, newSet] } : item)
+                            };
+                          });
+                        }}
+                        className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 shrink-0"
+                      >
+                        <Plus size={12} /> {language === 'en' ? 'Add Set' : 'Aggiungi Serie'}
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {ex.sets.map((set, sIdx) => (
+                        <div key={set.id || sIdx} className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 text-xs">
+                          <span className="font-bold text-slate-500 shrink-0 w-12 sm:w-16">Set #{sIdx + 1}:</span>
+                          
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-slate-400 font-semibold uppercase hidden sm:inline">Kg:</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.5"
+                              value={set.weightKg}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setEditingRoutineWeights(prev => {
+                                  if (!prev) return null;
+                                  return {
+                                    ...prev,
+                                    exercises: prev.exercises.map(item => item.id === ex.id ? {
+                                      ...item,
+                                      sets: item.sets.map(s => s.id === set.id ? { ...s, weightKg: val } : s)
+                                    } : item)
+                                  };
+                                });
+                              }}
+                              className="w-14 sm:w-16 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border text-center font-mono font-bold text-xs"
+                            />
+                            <span className="text-[10px] text-slate-400 font-bold">kg</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-slate-400 font-semibold uppercase hidden sm:inline">Reps:</span>
+                            <span className="text-slate-400">×</span>
+                            <input
+                              type="number"
+                              min="1"
+                              max="100"
+                              value={set.reps}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 1;
+                                setEditingRoutineWeights(prev => {
+                                  if (!prev) return null;
+                                  return {
+                                    ...prev,
+                                    exercises: prev.exercises.map(item => item.id === ex.id ? {
+                                      ...item,
+                                      sets: item.sets.map(s => s.id === set.id ? { ...s, reps: val } : s)
+                                    } : item)
+                                  };
+                                });
+                              }}
+                              className="w-12 sm:w-14 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border text-center font-mono font-bold text-xs"
+                            />
+                            <span className="text-[10px] text-slate-400 font-bold">reps</span>
+                          </div>
+
+                          {ex.sets.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingRoutineWeights(prev => {
+                                  if (!prev) return null;
+                                  return {
+                                    ...prev,
+                                    exercises: prev.exercises.map(item => item.id === ex.id ? {
+                                      ...item,
+                                      sets: item.sets.filter(s => s.id !== set.id)
+                                    } : item)
+                                  };
+                                });
+                              }}
+                              className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors shrink-0"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingRoutineWeights(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                >
+                  {language === 'en' ? 'Cancel' : 'Annulla'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (editingRoutineWeights) {
+                      setRoutines(prev => prev.map(r => r.id === editingRoutineWeights.id ? editingRoutineWeights : r));
+                      setEditingRoutineWeights(null);
+                    }
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
+                >
+                  {language === 'en' ? 'Save Weights' : 'Salva Nuovi Carichi'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Add Custom Exercise to Library */}
+      <AnimatePresence>
+        {isAddingCustomExercise && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-lg max-h-[90dvh] overflow-y-auto custom-scrollbar rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    <Plus size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-slate-900 dark:text-white text-base">
+                      {language === 'en' ? 'Add Custom Exercise' : 'Aggiungi Nuovo Esercizio'}
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      {language === 'en' ? 'Integrated into exercise library and 3D anatomy viewer' : 'Integrato nella biblioteca e nel modello anatomico 3D'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsAddingCustomExercise(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateCustomExerciseSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'en' ? 'Exercise Name *' : 'Nome Esercizio *'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={customExName}
+                    onChange={e => setCustomExName(e.target.value)}
+                    placeholder="es. Croci ai cavi alti, Hip Thrust con bilanciere..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {language === 'en' ? 'Muscle Group' : 'Gruppo Muscolare'}
+                    </label>
+                    <select
+                      value={customExMuscleGroup}
+                      onChange={e => setCustomExMuscleGroup(e.target.value as MuscleGroup)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <option value="chest">Petto (Chest)</option>
+                      <option value="back">Dorso (Back)</option>
+                      <option value="legs">Gambe (Legs)</option>
+                      <option value="shoulders">Spalle (Shoulders)</option>
+                      <option value="arms">Braccia (Arms)</option>
+                      <option value="core">Addome (Core)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {language === 'en' ? 'Equipment' : 'Attrezzo'}
+                    </label>
+                    <select
+                      value={customExEquipment}
+                      onChange={e => setCustomExEquipment(e.target.value as any)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <option value="dumbbell">Manubri</option>
+                      <option value="barbell">Bilanciere</option>
+                      <option value="machine">Macchinario Guidato</option>
+                      <option value="cables">Cavi</option>
+                      <option value="bodyweight">Corpo Libero</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {language === 'en' ? 'Primary Muscle(s)' : 'Muscolo Target'}
+                    </label>
+                    <input
+                      type="text"
+                      value={customExPrimaryMuscles}
+                      onChange={e => setCustomExPrimaryMuscles(e.target.value)}
+                      placeholder="es. Pettorali alti, Femorali..."
+                      className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      {language === 'en' ? '3D Body View' : 'Visuale 3D Corpo'}
+                    </label>
+                    <div className="flex gap-2 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setCustomExViewType('front')}
+                        className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                          customExViewType === 'front'
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                        }`}
+                      >
+                        Fronte
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomExViewType('back')}
+                        className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                          customExViewType === 'back'
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                        }`}
+                      >
+                        Retro
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'en' ? 'Setup & Execution Notes' : 'Consigli di Esecuzione & Posizionamento'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={customExExecution}
+                    onChange={e => setCustomExExecution(e.target.value)}
+                    placeholder="es. Posiziona la panca a 30°, contrai le scapole e mantieni i gomiti leggermente flessi..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingCustomExercise(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  >
+                    {language === 'en' ? 'Cancel' : 'Annulla'}
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
+                  >
+                    {language === 'en' ? 'Save Exercise' : 'Salva Esercizio'}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

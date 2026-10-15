@@ -141,6 +141,15 @@ export interface CompletedWorkoutLog {
   notes?: string;
 }
 
+export interface ExerciseWeightRecord {
+  exerciseId: string;
+  exerciseName: string;
+  lastWeightKg: number;
+  lastReps: number;
+  maxWeightKg: number;
+  updatedAt: string;
+}
+
 export interface WeeklyScheduleDay {
   dayIndex: number; // 0 = Domenica, 1 = Lunedì, 2 = Martedì, ..., 6 = Sabato
   dayName: string;

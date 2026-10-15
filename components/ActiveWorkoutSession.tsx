@@ -25,7 +25,7 @@ import { useLanguage } from '../LanguageContext';
 
 interface ActiveWorkoutSessionProps {
   routine: WorkoutRoutine;
-  onFinishWorkout: (log: CompletedWorkoutLog) => void;
+  onFinishWorkout: (log: CompletedWorkoutLog, updatedExercises?: WorkoutExercise[]) => void;
   onCancelWorkout: () => void;
 }
 
@@ -40,6 +40,17 @@ export const ActiveWorkoutSession: React.FC<ActiveWorkoutSessionProps> = ({
   const [exercises, setExercises] = useState<WorkoutExercise[]>(() => JSON.parse(JSON.stringify(routine.exercises)));
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  // Exercise weight records from previous sessions
+  const [exerciseRecords, setExerciseRecords] = useState<Record<string, { lastWeightKg: number; lastReps: number; maxWeightKg: number; updatedAt: string }>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('produttivita_gym_exercise_records_v1');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {};
+  });
 
   // Rest Timer State
   const [restSecondsLeft, setRestSecondsLeft] = useState<number | null>(null);
@@ -154,6 +165,27 @@ export const ActiveWorkoutSession: React.FC<ActiveWorkoutSessionProps> = ({
       origin: { y: 0.6 }
     });
 
+    // Save/update exercise records in localStorage
+    try {
+      const existing = { ...exerciseRecords };
+      exercises.forEach(ex => {
+        const completedSets = ex.sets.filter(s => s.completed);
+        if (completedSets.length > 0) {
+          const maxW = Math.max(...completedSets.map(s => s.weightKg));
+          const lastSet = completedSets[completedSets.length - 1];
+          existing[ex.exerciseId] = {
+            lastWeightKg: lastSet.weightKg,
+            lastReps: lastSet.reps,
+            maxWeightKg: Math.max(existing[ex.exerciseId]?.maxWeightKg || 0, maxW),
+            updatedAt: new Date().toISOString()
+          };
+        }
+      });
+      localStorage.setItem('produttivita_gym_exercise_records_v1', JSON.stringify(existing));
+    } catch (e) {
+      console.error('Failed to save exercise records', e);
+    }
+
     const log: CompletedWorkoutLog = {
       id: 'log-' + Date.now(),
       routineTitle: routine.title,
@@ -164,7 +196,7 @@ export const ActiveWorkoutSession: React.FC<ActiveWorkoutSessionProps> = ({
       totalSets: totalCompletedSets,
     };
 
-    onFinishWorkout(log);
+    onFinishWorkout(log, exercises);
   };
 
   const handleOpenExerciseGuide = (exerciseId: string) => {
@@ -177,31 +209,31 @@ export const ActiveWorkoutSession: React.FC<ActiveWorkoutSessionProps> = ({
   return (
     <div className="space-y-6 pb-36 animate-in fade-in duration-300">
       {/* Sticky Active Workout Header */}
-      <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3.5 bg-white/95 dark:bg-[#070b14]/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 shadow-md flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-brand-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 shrink-0">
-            <Dumbbell size={20} />
+      <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3.5 bg-white/95 dark:bg-[#070b14]/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 shadow-md flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-brand-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 shrink-0">
+            <Dumbbell size={18} />
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">
               {routine.dayTag}
             </span>
-            <h2 className="text-sm sm:text-base font-black tracking-tight text-slate-900 dark:text-white truncate max-w-[180px] sm:max-w-xs">
+            <h2 className="text-sm sm:text-base font-black tracking-tight text-slate-900 dark:text-white truncate max-w-[110px] xs:max-w-[170px] sm:max-w-xs">
               {routine.title}
             </h2>
           </div>
         </div>
 
         {/* Workout Timer & Controls */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-            <Clock size={15} className="text-emerald-500 animate-pulse" />
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+            <Clock size={14} className="text-emerald-500 animate-pulse" />
             <span>{formatTime(elapsedSeconds)}</span>
           </div>
 
           <button
             onClick={() => setIsPaused(p => !p)}
-            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
+            className="p-1.5 sm:p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
             title={isPaused ? 'Riprendi' : 'Pausa'}
           >
             {isPaused ? <Play size={16} /> : <Pause size={16} />}
@@ -209,15 +241,15 @@ export const ActiveWorkoutSession: React.FC<ActiveWorkoutSessionProps> = ({
 
           <button
             onClick={handleCompleteWorkout}
-            className="px-3.5 sm:px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-brand-600 text-white font-black text-xs shadow-lg shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-1.5"
+            className="px-3 sm:px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-brand-600 text-white font-black text-xs shadow-lg shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-1"
           >
-            <Check size={16} />
+            <Check size={15} />
             <span className="hidden sm:inline">{language === 'en' ? 'Finish Workout' : 'Termina'}</span>
           </button>
 
           <button
             onClick={onCancelWorkout}
-            className="p-2 rounded-xl text-slate-400 hover:text-rose-500 transition-colors"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-rose-500 transition-colors"
             title="Annulla allenamento"
           >
             <X size={18} />
@@ -269,11 +301,18 @@ export const ActiveWorkoutSession: React.FC<ActiveWorkoutSessionProps> = ({
                   <h3 className="text-base font-black text-slate-900 dark:text-white">
                     {ex.name}
                   </h3>
-                  {ex.notes && (
-                    <p className="text-xs text-slate-400 italic">
-                      {ex.notes}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                    {exerciseRecords[ex.exerciseId] && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                        <span>💡 Ultima volta: {exerciseRecords[ex.exerciseId].lastWeightKg} kg × {exerciseRecords[ex.exerciseId].lastReps} reps</span>
+                      </span>
+                    )}
+                    {ex.notes && (
+                      <p className="text-xs text-slate-400 italic">
+                        {ex.notes}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -290,7 +329,7 @@ export const ActiveWorkoutSession: React.FC<ActiveWorkoutSessionProps> = ({
 
             {/* Sets Table */}
             <div className="space-y-2">
-              <div className="grid grid-cols-12 gap-2 text-[10px] font-black uppercase tracking-wider text-slate-400 px-2">
+              <div className="grid grid-cols-12 gap-1.5 sm:gap-2 text-[10px] font-black uppercase tracking-wider text-slate-400 px-2">
                 <div className="col-span-2 text-center">Set</div>
                 <div className="col-span-5 text-center">{language === 'en' ? 'Weight (kg)' : 'Carico (Kg)'}</div>
                 <div className="col-span-3 text-center">{language === 'en' ? 'Reps' : 'Reps'}</div>
@@ -300,7 +339,7 @@ export const ActiveWorkoutSession: React.FC<ActiveWorkoutSessionProps> = ({
               {ex.sets.map((set, setIdx) => (
                 <div
                   key={set.id}
-                  className={`grid grid-cols-12 gap-2 items-center p-2 rounded-2xl transition-all ${
+                  className={`grid grid-cols-12 gap-1.5 sm:gap-2 items-center p-2 rounded-2xl transition-all ${
                     set.completed
                       ? 'bg-emerald-500/10 border border-emerald-500/30'
                       : 'bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800/60'
@@ -312,42 +351,42 @@ export const ActiveWorkoutSession: React.FC<ActiveWorkoutSessionProps> = ({
                   </div>
 
                   {/* Weight Controls */}
-                  <div className="col-span-5 flex items-center justify-center gap-1.5">
+                  <div className="col-span-5 flex items-center justify-center gap-1 sm:gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleUpdateSetValue(ex.id, set.id, 'weightKg', -2.5)}
-                      className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold active:scale-95 transition-all"
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold active:scale-95 transition-all shrink-0"
                     >
-                      <Minus size={12} />
+                      <Minus size={11} />
                     </button>
-                    <span className="font-mono font-bold text-sm text-slate-900 dark:text-white min-w-[36px] text-center">
+                    <span className="font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white min-w-[28px] sm:min-w-[36px] text-center">
                       {set.weightKg}
                     </span>
                     <button
                       type="button"
                       onClick={() => handleUpdateSetValue(ex.id, set.id, 'weightKg', 2.5)}
-                      className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold active:scale-95 transition-all"
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold active:scale-95 transition-all shrink-0"
                     >
-                      <Plus size={12} />
+                      <Plus size={11} />
                     </button>
                   </div>
 
                   {/* Reps Controls */}
-                  <div className="col-span-3 flex items-center justify-center gap-1.5">
+                  <div className="col-span-3 flex items-center justify-center gap-0.5 sm:gap-1">
                     <button
                       type="button"
                       onClick={() => handleUpdateSetValue(ex.id, set.id, 'reps', -1)}
-                      className="w-6 h-6 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold active:scale-95 transition-all"
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold active:scale-95 transition-all shrink-0"
                     >
                       <Minus size={10} />
                     </button>
-                    <span className="font-mono font-bold text-sm text-slate-900 dark:text-white min-w-[20px] text-center">
+                    <span className="font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white min-w-[18px] sm:min-w-[20px] text-center">
                       {set.reps}
                     </span>
                     <button
                       type="button"
                       onClick={() => handleUpdateSetValue(ex.id, set.id, 'reps', 1)}
-                      className="w-6 h-6 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold active:scale-95 transition-all"
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold active:scale-95 transition-all shrink-0"
                     >
                       <Plus size={10} />
                     </button>

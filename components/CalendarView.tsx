@@ -193,7 +193,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         )}
 
         {/* Add Appointment Glass Card */}
-        <div className="glass-card p-6 rounded-[2.5rem]">
+        <div className="glass-card p-4 sm:p-6 rounded-3xl sm:rounded-[2.5rem]">
           <form onSubmit={handleAddAppointment} className="space-y-4">
             <div className="relative">
               <input 
@@ -259,7 +259,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       </section>
 
       {/* Interactive Month Calendar Grid */}
-      <section className="glass-card p-6 rounded-[2.5rem] overflow-hidden">
+      <section className="glass-card p-3 sm:p-6 rounded-3xl sm:rounded-[2.5rem] overflow-hidden">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h3 className="text-xl font-black text-slate-900 dark:text-white capitalize">

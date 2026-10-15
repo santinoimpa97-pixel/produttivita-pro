@@ -66,24 +66,24 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({ exerci
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-2xl bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col"
+          className="relative w-full max-w-2xl bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[90dvh] flex flex-col"
         >
           {/* Header */}
-          <div className="sticky top-0 z-20 px-6 py-4 bg-white/90 dark:bg-[#0b1120]/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-emerald-600 to-brand-500 text-white shadow-lg shadow-emerald-500/25">
-                <Dumbbell size={20} />
+          <div className="sticky top-0 z-20 px-4 sm:px-6 py-3.5 sm:py-4 bg-white/90 dark:bg-[#0b1120]/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div className="p-2 sm:p-2.5 rounded-2xl bg-gradient-to-tr from-emerald-600 to-brand-500 text-white shadow-lg shadow-emerald-500/25 shrink-0">
+                <Dumbbell size={18} />
               </div>
-              <div>
-                <h3 className="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white leading-tight truncate">
                   {language === 'en' ? exercise.nameEn : exercise.name}
                 </h3>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 capitalize">
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 capitalize shrink-0">
                     {exercise.muscleGroup}
                   </span>
                   <span className="text-slate-300 dark:text-slate-700">•</span>
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">
                     {getEquipmentLabel(exercise.equipment)}
                   </span>
                 </div>
@@ -92,14 +92,14 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({ exerci
 
             <button
               onClick={onClose}
-              className="p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+              className="p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors shrink-0"
             >
               <X size={20} />
             </button>
           </div>
 
           {/* Modal Body */}
-          <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+          <div className="p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6 custom-scrollbar">
             {/* Top section: Muscle Anatomy Visualizer & Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
               <MuscleAnatomyViewer

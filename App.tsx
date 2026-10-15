@@ -74,7 +74,30 @@ function App() {
   });
 
   // Default view is now Dashboard
-  const [view, setView] = useState<View>('dashboard');
+  const [view, setView] = useState<View>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const pageParam = params.get('page') || params.get('view');
+        const validViews: View[] = ['dashboard', 'tasks', 'calendar', 'routines', 'goals', 'notes', 'assistant', 'fitness', 'profile'];
+        if (pageParam && validViews.includes(pageParam as View)) {
+          return pageParam as View;
+        }
+      } catch {}
+    }
+    return 'dashboard';
+  });
+
+  const handleSetView = (newView: View) => {
+    setView(newView);
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', newView);
+        window.history.replaceState({}, '', url.toString());
+      } catch {}
+    }
+  };
   const [subtitle, setSubtitle] = useState(() => getTranslator(((localStorage.getItem('language') as Language) || 'it'))('header_subtitle_loading'));
   
   // Command Menu State
@@ -131,7 +154,7 @@ function App() {
     setActiveWorkoutRoutine(routine);
   };
 
-  const handleFinishWorkout = (log: CompletedWorkoutLog) => {
+  const handleFinishWorkout = (log: CompletedWorkoutLog, updatedExercises?: WorkoutExercise[]) => {
     setFitnessLogs(prev => {
       const updated = [log, ...prev];
       try {
@@ -141,6 +164,37 @@ function App() {
       }
       return updated;
     });
+
+    // Automatically update the routine's working weights & reps for next week!
+    if (activeWorkoutRoutine && updatedExercises) {
+      try {
+        const savedRoutines = localStorage.getItem('produttivita_gym_routines_v1');
+        if (savedRoutines) {
+          const parsed: WorkoutRoutine[] = JSON.parse(savedRoutines);
+          const updated = parsed.map(r => {
+            if (r.id !== activeWorkoutRoutine.id) return r;
+            return {
+              ...r,
+              exercises: r.exercises.map(origEx => {
+                const match = updatedExercises.find(u => u.id === origEx.id || u.exerciseId === origEx.exerciseId);
+                if (!match) return origEx;
+                return {
+                  ...origEx,
+                  sets: match.sets.map(s => ({
+                    ...s,
+                    completed: false // reset checkmark for the next session, but KEEP the new weights and reps!
+                  }))
+                };
+              })
+            };
+          });
+          localStorage.setItem('produttivita_gym_routines_v1', JSON.stringify(updated));
+        }
+      } catch (e) {
+        console.error('Failed to update routine weights', e);
+      }
+    }
+
     setActiveWorkoutRoutine(null);
     playTaskCompleteSound();
     triggerCelebrationConfetti();
@@ -867,7 +921,7 @@ function App() {
           goals={goals}
           subtitle={subtitle}
           userName={user?.displayName || 'Utente'}
-          onSetView={setView}
+          onSetView={handleSetView}
           onToggleTask={handleToggleTask}
           onRefreshQuote={handleRefreshQuote}
           isRefreshingQuote={isRefreshingQuote}
@@ -1025,7 +1079,7 @@ function App() {
         {/* Desktop Sidebar */}
         <Sidebar 
           currentView={view}
-          onSetView={setView}
+          onSetView={handleSetView}
           tasksCountToday={tasksCountToday}
           user={user}
           isDarkMode={isDarkMode}
@@ -1051,7 +1105,7 @@ function App() {
         <CommandMenu 
           isOpen={isCommandMenuOpen}
           onClose={() => setIsCommandMenuOpen(false)}
-          onNavigate={setView}
+          onNavigate={handleSetView}
           tasks={tasks}
           notes={notes}
           goals={goals}
@@ -1059,7 +1113,7 @@ function App() {
           onAddTask={(text) => handleAddTask(text, Priority.Medium, todayISO)}
           onToggleDarkMode={toggleDarkMode}
           isDarkMode={isDarkMode}
-          onPlanDay={() => setView('dashboard')}
+          onPlanDay={() => handleSetView('dashboard')}
         />
 
         {/* Main Application Area (offset by sidebar on desktop) */}
@@ -1069,14 +1123,14 @@ function App() {
             onLogout={handleLogout} 
             isDarkMode={isDarkMode} 
             toggleDarkMode={toggleDarkMode} 
-            onSetView={setView} 
+            onSetView={handleSetView} 
             subtitle={subtitle} 
             onOpenCommandMenu={() => setIsCommandMenuOpen(true)}
             onRefreshQuote={handleRefreshQuote}
             isRefreshingQuote={isRefreshingQuote}
           />
 
-          <main className="max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-8 pb-28 md:pb-12">
+          <main className="max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-8 pb-36 md:pb-12">
             <AnimatePresence mode="wait">
               <motion.div
                 key={view}
@@ -1092,7 +1146,14 @@ function App() {
         </div>
 
         {/* Mobile Floating Bottom Bar */}
-        <BottomNav currentView={view} onSetView={setView} />
+        <BottomNav 
+          currentView={view} 
+          onSetView={handleSetView} 
+          tasksCountToday={tasksCountToday}
+          onOpenCommandMenu={() => setIsCommandMenuOpen(true)}
+          isDarkMode={isDarkMode}
+          toggleDarkMode={toggleDarkMode}
+        />
       </div>
     </LanguageContext.Provider>
   );

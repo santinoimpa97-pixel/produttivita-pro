@@ -58,9 +58,9 @@ const GoalModal: React.FC<GoalModalProps> = ({ isOpen, onClose, onSave, goalToEd
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl shadow-brand-500/10 overflow-hidden border border-slate-100 dark:border-slate-800/50"
+                        className="relative w-full max-w-lg max-h-[90dvh] overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] shadow-2xl shadow-brand-500/10 border border-slate-100 dark:border-slate-800/50"
                     >
-                        <div className="p-8 space-y-8">
+                        <div className="p-5 sm:p-8 space-y-6 sm:space-y-8">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="p-3 rounded-2xl bg-brand-500 bg-opacity-10 dark:bg-opacity-20 text-brand-600">

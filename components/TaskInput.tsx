@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Priority, Task, TaskHistoryItem } from '../types';
-import { Plus, Calendar, Flag, History, Sparkles, Flame, X, ArrowUpRight, Check } from 'lucide-react';
+import { Plus, Calendar, Flag, History, Sparkles, Flame, X, ArrowUpRight, Check, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import VoiceButton from './VoiceButton';
 import { 
@@ -140,7 +140,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, existingTasks = [] }) 
   };
 
   return (
-    <div ref={containerRef} className="glass-card p-6 rounded-3xl shadow-xl shadow-brand-500/5 relative">
+    <div ref={containerRef} className="glass-card p-4 sm:p-6 rounded-3xl shadow-xl shadow-brand-500/5 relative">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <div className="flex items-center justify-between ml-1">
@@ -303,8 +303,8 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, existingTasks = [] }) 
           </AnimatePresence>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2 min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="space-y-1.5 min-w-0">
             <label htmlFor="due-date" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1 flex items-center gap-1">
               <Calendar size={12} /> {t('tasks_due_date')}
             </label>
@@ -313,23 +313,26 @@ const TaskInput: React.FC<TaskInputProps> = ({ onAddTask, existingTasks = [] }) 
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full min-w-0 appearance-none px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-xl text-slate-900 dark:text-white focus:outline-none transition-all text-sm"
+              className="w-full min-w-0 appearance-none px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-xl text-slate-900 dark:text-white focus:outline-none transition-all text-sm font-medium"
             />
           </div>
-          <div className="space-y-2 min-w-0">
+          <div className="space-y-1.5 min-w-0">
             <label htmlFor="priority" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1 flex items-center gap-1">
               <Flag size={12} /> {t('tasks_priority')}
             </label>
-            <select
-              id="priority"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as Priority)}
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-xl text-slate-900 dark:text-white focus:outline-none transition-all text-sm appearance-none cursor-pointer"
-            >
-              <option value={Priority.High}>{t('tasks_priority_high')}</option>
-              <option value={Priority.Medium}>{t('tasks_priority_medium')}</option>
-              <option value={Priority.Low}>{t('tasks_priority_low')}</option>
-            </select>
+            <div className="relative">
+              <select
+                id="priority"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as Priority)}
+                className="w-full pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-brand-500 rounded-xl text-slate-900 dark:text-white focus:outline-none transition-all text-sm font-medium appearance-none cursor-pointer"
+              >
+                <option value={Priority.High}>{t('tasks_priority_high')}</option>
+                <option value={Priority.Medium}>{t('tasks_priority_medium')}</option>
+                <option value={Priority.Low}>{t('tasks_priority_low')}</option>
+              </select>
+              <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
           </div>
         </div>
         
