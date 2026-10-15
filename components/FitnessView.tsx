@@ -109,6 +109,9 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
   // Routine Weights Editor modal state
   const [editingRoutineWeights, setEditingRoutineWeights] = useState<WorkoutRoutine | null>(null);
 
+  // Delete Routine Confirmation state
+  const [routineToDelete, setRoutineToDelete] = useState<WorkoutRoutine | null>(null);
+
   // New Custom Exercise modal state
   const [isAddingCustomExercise, setIsAddingCustomExercise] = useState(false);
   const [customExName, setCustomExName] = useState('');
@@ -436,6 +439,14 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
     setNewRoutineTag('');
     setNewRoutineDesc('');
     setNewRoutineSelectedExIds([]);
+  };
+
+  const handleDeleteRoutine = (routineId: string) => {
+    setRoutines(prev => prev.filter(r => r.id !== routineId));
+    setWeeklySchedule(prev => prev.map(d => d.routineId === routineId ? { ...d, isRestDay: true, routineId: undefined, customLabel: undefined } : d));
+    if (expandedRoutineId === routineId) setExpandedRoutineId(null);
+    if (editingRoutineWeights?.id === routineId) setEditingRoutineWeights(null);
+    setRoutineToDelete(null);
   };
 
   const handleResetToDefaultRoutines = () => {
@@ -777,25 +788,68 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
       {/* TAB 1: ROUTINES & WORKOUTS */}
       {activeTab === 'routines' && (
         <div className="space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {routines.map(routine => {
-              const isExpanded = expandedRoutineId === routine.id;
-
-              return (
-                <div
-                  key={routine.id}
-                  className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-5 sm:p-6 shadow-sm hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-4"
+          {routines.length === 0 ? (
+            <div className="text-center py-12 px-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                <Dumbbell size={28} />
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  {language === 'en' ? 'No workout routines found' : 'Nessuna scheda presente'}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {language === 'en'
+                    ? 'You have deleted all routines. Create a new one, generate one with AI Coach, or restore starter templates.'
+                    : 'Hai rimosso tutte le schede. Puoi crearne una nuova, generarla con il Coach IA o ripristinare le schede predefinite.'}
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => setIsCreatingRoutine(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md shadow-emerald-600/20 transition-all active:scale-95"
                 >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-wider border border-emerald-500/20">
-                        {routine.dayTag}
-                      </span>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
-                        <Clock size={13} />
-                        <span>~{routine.estimatedDurationMin} min</span>
+                  <Plus size={15} />
+                  <span>{language === 'en' ? 'New Routine' : 'Nuova Scheda'}</span>
+                </button>
+                <button
+                  onClick={handleResetToDefaultRoutines}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors"
+                >
+                  <Layers size={15} />
+                  <span>{language === 'en' ? 'Restore Defaults' : 'Ripristina Predefinite'}</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {routines.map(routine => {
+                const isExpanded = expandedRoutineId === routine.id;
+
+                return (
+                  <div
+                    key={routine.id}
+                    className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-5 sm:p-6 shadow-sm hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-4"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-wider border border-emerald-500/20">
+                          {routine.dayTag}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
+                            <Clock size={13} />
+                            <span>~{routine.estimatedDurationMin} min</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setRoutineToDelete(routine)}
+                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                            title={language === 'en' ? 'Delete routine' : 'Elimina scheda'}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
                     <div>
                       <h3 className="text-lg font-black text-slate-900 dark:text-white">
@@ -895,20 +949,21 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Start Routine Button */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <button
-                      onClick={() => onStartWorkout(routine)}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-lg shadow-emerald-600/25 active:scale-[0.98] transition-all"
-                    >
-                      <Play size={16} fill="currentColor" />
-                      <span>{language === 'en' ? 'Start Workout' : 'Inizia Allenamento'}</span>
-                    </button>
+                    {/* Start Routine Button */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        onClick={() => onStartWorkout(routine)}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-lg shadow-emerald-600/25 active:scale-[0.98] transition-all"
+                      >
+                        <Play size={16} fill="currentColor" />
+                        <span>{language === 'en' ? 'Start Workout' : 'Inizia Allenamento'}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -1932,6 +1987,52 @@ export const FitnessView: React.FC<FitnessViewProps> = ({
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Routine Confirmation Modal */}
+      <AnimatePresence>
+        {routineToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+                <Trash2 size={24} />
+              </div>
+
+              <div className="text-center space-y-1.5">
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  {language === 'en' ? 'Delete Routine?' : 'Eliminare la Scheda?'}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  {language === 'en' 
+                    ? `Are you sure you want to delete "${routineToDelete.title}"? This cannot be undone.`
+                    : `Sei sicuro di voler eliminare "${routineToDelete.title}"? La scheda verrà rimossa anche dal tuo programma settimanale.`}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRoutineToDelete(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors"
+                >
+                  {language === 'en' ? 'Cancel' : 'Annulla'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteRoutine(routineToDelete.id)}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shadow-md shadow-rose-600/20 transition-all active:scale-95"
+                >
+                  {language === 'en' ? 'Delete' : 'Elimina'}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
